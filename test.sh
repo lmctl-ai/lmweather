@@ -42,8 +42,10 @@ cmp -s "$WORK/schema.json" schema/lmweather.dsl.json || fail "embedded schema di
 ok "--dsl-schema --json prints byte-identical embedded schema bytes"
 diff -u <("$LMSCRIPT" --dsl-signatures schema/lmweather.dsl.json) <("$HOST" --dsl-signatures) || fail "host/compiler signatures differ"
 ok "host registry matches compiler signatures"
-"$HOST" --notices | grep -q "Lattice Systems" || fail "--notices missing third-party text"
-ok "--notices prints the third-party license texts"
+"$HOST" --notices >"$WORK/notices.txt" || fail "--notices"
+grep -q "Lattice Systems" "$WORK/notices.txt" || fail "--notices missing third-party text"
+cmp -s "$WORK/notices.txt" THIRD_PARTY_NOTICES || fail "--notices differs from THIRD_PARTY_NOTICES"
+ok "--notices prints THIRD_PARTY_NOTICES byte for byte"
 
 case "$UNAME_S" in
   Linux) if ldd "$HOST" >/dev/null 2>&1; then fail "executable is dynamically linked"; fi; ok "executable is fully static (no dynamic loader)";;
@@ -124,7 +126,11 @@ expect_error no_rossby_radius 'let p = wx.plane(10, 10, 1000000.0, 500000.0); le
 expect_error unwritable 'wx.save_text("/nonexistent-dir/x.csv", "x");' "cannot write"
 expect_error assertfail 'wx.assert_close(1.0, 2.0, 0.1);' "assert_close failed"
 expect_error assert_true 'wx.assert_true(false);' "assert_true failed"
-ok "errors stop with exit 3 and clear messages (27 cases)"
+# Expression strings: deep nesting used to overflow the parser's stack (SIGSEGV).
+deep="$(printf '(%.0s' $(seq 300))1$(printf ')%.0s' $(seq 300))"
+expect_error deep_expression "let s = wx.sphere(10).fields(\"$deep\", \"0\", \"0\");" "nested too deeply"
+expect_error huge_number 'let s = wx.sphere(10).fields("1e400", "0", "0");' "out of range"
+ok "errors stop with exit 3 and clear messages (29 cases)"
 
 # Combined pipelines (lmweather simulates, lmplot draws). Need lmplot on PATH, or network for install=.
 if command -v lmplot >/dev/null 2>&1 || [ "${LMWEATHER_TEST_NETWORK:-}" = 1 ]; then

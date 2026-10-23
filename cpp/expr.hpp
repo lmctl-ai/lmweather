@@ -42,9 +42,20 @@ class Expr {
   std::map<std::string, double> params_;
   size_t pos_ = 0;
   P root_;
+  // Parsing and eval() recurse: bound the nesting and the tree size so a long or deeply nested string is an
+  // error instead of a stack overflow (SIGSEGV; Windows has a 1 MB main stack).
+  static constexpr int max_depth = 200;
+  static constexpr int max_leaves = 2000;
+  int depth_ = 0, leaves_ = 0;
+  struct Nest {
+    Expr &e;
+    explicit Nest(Expr &x) : e(x) { if (++e.depth_ > max_depth) e.fail("expression is nested too deeply"); }
+    ~Nest() { --e.depth_; }
+  };
 
   [[noreturn]] void fail(const std::string &m) const {
-    throw std::runtime_error("expression \"" + src_ + "\": " + m + " at column " + std::to_string(pos_ + 1));
+    const std::string shown = src_.size() <= 120 ? src_ : src_.substr(0, 117) + "...";
+    throw std::runtime_error("expression \"" + shown + "\": " + m + " at column " + std::to_string(pos_ + 1));
   }
   void skip() { while (pos_ < src_.size() && std::isspace((unsigned char)src_[pos_])) pos_++; }
   bool eat(char c) { skip(); if (pos_ < src_.size() && src_[pos_] == c) { pos_++; return true; } return false; }
@@ -52,6 +63,7 @@ class Expr {
   static P un(std::function<double(double)> f, P a) { auto n = std::make_unique<Un>(); n->f = std::move(f); n->a = std::move(a); return n; }
 
   P parse_add() {
+    Nest guard(*this);
     P l = parse_mul();
     for (;;) {
       if (eat('+')) l = bin([](double a, double b) { return a + b; }, std::move(l), parse_mul());
@@ -68,6 +80,7 @@ class Expr {
     }
   }
   P parse_unary() {
+    Nest guard(*this);
     if (eat('-')) return un([](double a) { return -a; }, parse_unary());
     if (eat('+')) return parse_unary();
     return parse_pow();
@@ -84,10 +97,13 @@ class Expr {
     skip();
     if (pos_ >= src_.size()) fail("unexpected end");
     char c = src_[pos_];
+    if (++leaves_ > max_leaves) fail("expression has too many terms");
     if (c == '(') { pos_++; P e = parse_add(); if (!eat(')')) fail("expected ')'"); return e; }
     if (std::isdigit((unsigned char)c) || c == '.') {
       size_t used = 0;
-      double x = std::stod(src_.substr(pos_), &used);
+      double x = 0;
+      try { x = std::stod(src_.substr(pos_), &used); }
+      catch (const std::exception &) { fail("number is malformed or out of range"); }
       pos_ += used;
       return std::make_unique<Num>(x);
     }
