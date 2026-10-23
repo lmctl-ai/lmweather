@@ -1,5 +1,5 @@
-Third-party notices for lmweather
-=================================
+Third-party notices for lmweather 0.1.2
+=======================================
 
 lmweather's own code (cpp/, schema/, scripts/, examples/, tests/; including the vendored `cpp/dslvm.hpp`
 runtime from the cpp-dsl-sdk project and `cpp/expr.hpp`, the expression compiler shared with the lmnum host) is
