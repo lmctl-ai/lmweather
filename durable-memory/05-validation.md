@@ -31,6 +31,11 @@ Every test asserts a closed form, an exact property or a published test-case beh
   honest TC1 number: centre 1003.2, peak 989.5, undershoot -3.2 m at T42. The same bell as an expression carried by the
   steady dynamics of test case 2 agrees with the frozen-wind run to 1e-6 after 3 days. In test case 6 (divergent) the
   tracer mass h q is conserved to 1e-4 over 2 days while the mean of q is not.
+- **Orography and Williamson test case 5** (`tests/sphere_orography.lms`): rest with a flat free surface over the 2000 m cone
+  stays at rest for a day (max wind 2e-11 m/s, l2 2e-14, energy exact); the same thickness without the mountain collapses
+  (24 m/s). TC5 at T42, 900 s steps, 15 days: mass exact, energy within 4e-8 (asserted 1e-6), potential enstrophy within 5e-7
+  (asserted 1e-5), winds grow from 20 to 42 m/s, a lee-side vorticity anomaly of 3.5e-5 /s at 300 E 30 N with the upstream
+  side unchanged; T21 gives the same global height change (l2 0.0160 vs 0.0160 against day 0).
 - **Geostrophic adjustment** (`tests/plane_adjustment.lms`, `examples/geostrophic_adjustment.lms`, `tests/sphere_adjustment.lms`):
   channel with f0 = 1e-4, H = 1000 m (Ld = 990.5 km), Gaussian bump width ~400 km varying in y; the time mean over 10 inertial
   periods equals the potential-vorticity prediction h_n = h0_n/(1 + (n pi Ld/Ly)^2) in cosine modes, center 0.3018 m vs 0.3024 m

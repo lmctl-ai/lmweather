@@ -43,6 +43,12 @@ class Sphere {
   void add_mode(int n, int m, double amplitude, double mean_depth);  // h = mean + amplitude * P_n^m(sin lat) cos(m lon), at rest
   void perturb(double amplitude, uint64_t seed, int max_wave);       // seeded random height field of wavenumbers <= max_wave, zero mean
 
+  // Orography: surface height hs (m) on the grid. h stays the fluid thickness, the free surface is h + hs; the pressure
+  // gradient is -grad(g (h + hs) + E) and the energy adds g h hs (Williamson test case 5: flow over an isolated mountain).
+  void set_orography_grid(const std::vector<double> &hs);
+  bool has_orography() const { return has_orography_; }
+  const std::vector<double> &grid_orography() const { return hs_grid_; }
+
   // Passive tracer q (any unit) carried by the winds: dq/dt = -v . grad q, spectral like the other fields.
   void set_tracer_grid(const std::vector<double> &q);
   bool has_tracer() const { return has_tracer_; }
@@ -94,8 +100,8 @@ class Sphere {
   std::vector<double> mu_, w_;
   std::vector<std::vector<std::vector<double>>> P_, H_;  // [lat][m][n-m]
   std::vector<cplx> zeta_, delta_, phi_, q_;              // spectral, index m*(N+1)+n; q_ only with a tracer
-  bool has_tracer_ = false, advect_only_ = false;
-  std::vector<double> ref_phi_grid_, ref_q_grid_, f_grid_;  // f_grid_: Coriolis parameter on the grid
+  bool has_tracer_ = false, advect_only_ = false, has_orography_ = false;
+  std::vector<double> ref_phi_grid_, ref_q_grid_, f_grid_, hs_grid_;  // f_grid_: Coriolis parameter on the grid; hs_grid_: surface height
   size_t idx(int m, int n) const { return static_cast<size_t>(m) * (N_ + 1) + n; }
   void tracer_tendency(const std::vector<cplx> &z, const std::vector<cplx> &d, const std::vector<cplx> &q, std::vector<cplx> &dq) const;
   // grid <-> Fourier at one latitude

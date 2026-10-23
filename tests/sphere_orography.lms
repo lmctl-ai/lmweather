@@ -1,0 +1,48 @@
+# Orography. A resting fluid with a flat free surface over a mountain must stay at rest (the pressure gradient
+# -grad g (h + hs) vanishes exactly on the grid); the same thickness field without the mountain is a 2000 m hole that
+# collapses. Williamson et al. (1992) test case 5: zonal flow over an isolated conical mountain for 15 days conserves mass
+# exactly and energy and potential enstrophy to the truncation error, and a lee-side vorticity anomaly forms.
+out = ARGV.len() > 0 ? ARGV[0] : "build/sphere_orography.dslb";
+p = _dsl_ cli="lmweather";
+let pi = 3.141592653589793;
+let cone = "2000.0 * (1 - sqrt(min((pi / 9) * (pi / 9), (lon - 1.5 * pi) * (lon - 1.5 * pi) + (lat - pi / 6) * (lat - pi / 6))) / (pi / 9))";
+let r = wx.sphere(21).orography(cone).fields("5960.0 - " + cone, "0", "0");
+let e0 = r.energy();
+# 2000 m of the 5960 m column are mountain at its centre; the truncation rounds the cone's peak (T21 reads 4205 m there)
+wx.assert_close(r.height_at(30.0, 270.0), 3960.0, 300.0);
+wx.assert_close(r.height_at(30.0, 90.0), 5960.0, 1.0);          # far from the mountain the column is the full depth
+r.run_dt(86400.0, 1200.0);
+wx.assert_true(r.max_wind() < 0.000000001);
+wx.assert_true(r.error_l2() < 0.000000000001);
+wx.assert_close(r.energy() / e0, 1.0, 0.000000000001);
+# negative control: no mountain under the same thickness field
+let hole = wx.sphere(21).fields("5960.0 - " + cone, "0", "0");
+hole.run_dt(86400.0, 1200.0);
+wx.assert_true(hole.max_wind() > 10.0);
+wx.assert_true(hole.error_l2() > 0.01);
+# test case 5 at T42 with 15 minute steps (60% of the limit of 1511 s)
+let s = wx.sphere(42).williamson5();
+wx.assert_close(s.max_wind(), 20.0, 0.02);
+wx.assert_close(s.mean_height(), 5619.9, 0.5);
+wx.assert_close(s.height_at(30.0, 270.0) + 2000.0, 5960.0 - (6371220.0 * 0.00007292 * 20.0 + 200.0) * 0.25 / 9.80616, 200.0);  # peak rounded by T42
+wx.assert_close(s.height_at(30.0, 90.0), 5960.0 - (6371220.0 * 0.00007292 * 20.0 + 200.0) * 0.25 / 9.80616, 0.5);       # balanced TC2 surface away from it
+let m0 = s.mean_height();
+let e5 = s.energy();
+let q0 = s.enstrophy();
+let upstream0 = s.vorticity_at(30.0, 240.0);
+s.run_dt(15.0 * 86400.0, 900.0);
+wx.print("TC5 T42 day 15: energy " + str(s.energy() / e5 - 1.0) + " enstrophy " + str(s.enstrophy() / q0 - 1.0) + " max wind " + str(s.max_wind()) + " lee vorticity " + str(s.vorticity_at(30.0, 300.0)));
+wx.assert_close(s.mean_height(), m0, 0.000000001);
+wx.assert_close(s.energy() / e5, 1.0, 0.000001);
+wx.assert_close(s.enstrophy() / q0, 1.0, 0.00001);
+wx.assert_true(s.max_wind() > 35.0 && s.max_wind() < 50.0);
+# the lee of the mountain (30 E of it) carries a vorticity anomaly of a few 1e-5 /s, the far upstream side stays near zero
+wx.assert_true(s.vorticity_at(30.0, 300.0) > 0.00002);
+wx.assert_true(abs(s.vorticity_at(30.0, 240.0) - upstream0) < 0.00001);
+# T21 agrees on the global change of the height field (l2 against day 0) within 1%
+let c = wx.sphere(21).williamson5();
+c.run_dt(15.0 * 86400.0, 1200.0);
+wx.assert_close(c.error_l2(), s.error_l2(), 0.0002);
+wx.assert_true(s.error_l2() > 0.01 && s.error_l2() < 0.02);
+end _dsl_
+savedsl(p, out);

@@ -26,6 +26,10 @@ E = (U^2 + V^2) / (2 (1 - mu^2)), D(A, B) = (1/(a (1-mu^2))) dA/dlon + (1/a) dB/
 - Exact invariants: the (0,0) coefficient of Phi has zero tendency, so `mean_height` is conserved to rounding (1e-12).
   Energy `energy()` = area mean of h|v|^2/2 + g h^2/2; potential enstrophy = mean of eta^2/(2h).
 - Diagnostics at a point (`height_at`, `u_at`, ...) synthesize the spectral series exactly (no interpolation).
+- Orography (`orography(expr)`, surface height hs in m on the grid): h stays the fluid thickness, the Bernoulli function
+  becomes g (h + hs) + E (the mountain enters the divergence equation only), the energy adds g h hs. A resting fluid with a
+  flat free surface over a mountain is steady to rounding (the grid sum Phi + Phi_s is constant and its analysis exact).
+  `williamson5()` = test case 5 (u0 = 20 m/s, h0 = 5960 m, 2000 m cone of radius pi/9 at 270 E 30 N).
 - Passive tracer (`tracer(expr)`, any unit): a fourth spectral field q with dq/dt = -v . grad q, formed as
   -D(U q, V q) + q delta (flux form minus the divergence part, both on the grid). Stepped inside the same RK4 and filtered like
   the height. A non-divergent flow conserves the mean of q to rounding; a divergent flow conserves the mass h q (`tracer_mass`,
@@ -33,7 +37,7 @@ E = (U^2 + V^2) / (2 (1 - mu^2)), D(A, B) = (1/(a (1-mu^2))) dA/dlon + (1/a) dB/
   Phi (prescribed winds, Williamson test case 1: `williamson1(alpha)` sets the solid-body winds, the cosine bell as tracer and
   the flag); then the step limit is set by the winds alone, (T/a)|v|_max. Spectral advection has no shape preservation:
   the truncated cosine bell undershoots to -12 m at T21, -3.2 m at T42, -1.4 m at T63 (and keeps that ringing while it moves).
-- Limits: no forcing/dissipation other than hyperdiffusion, no moisture or vertical structure, truncation at most T170,
+- Limits: no forcing/dissipation other than hyperdiffusion (orography is the only forcing), no moisture or vertical structure, truncation at most T170,
   no semi-Lagrangian or implicit option (long dt not possible), and no shape-preserving (monotone) tracer scheme.
 
 ## Plane (C-grid finite differences)

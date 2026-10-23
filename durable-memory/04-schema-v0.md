@@ -13,6 +13,10 @@ height (use after `fields`). Expression constants: sphere `a, omega, g, pi, e`; 
 exponent literals (`1e-5` is invalid): write `0.00001`; it has no `exp`/`log` either: `pow(2.718281828459045, x)`.
 `wave_crest(m, lat)` and `Plane.zonal_crest` return a crest of the m-th zonal harmonic modulo its wavelength.
 
+Orography (sphere only): `orography(expr)` sets the surface height hs (m) from an expression in `lon, lat`, any time (it
+forces the next steps); `height_at` and the CSV `h` column stay the fluid thickness, the free surface is h + hs (CSV column 8).
+`williamson5()` sets mountain and flow together.
+
 Tracer (sphere only): `tracer(expr)` sets a passive scalar from an expression in `lon, lat` (set it after the state; `fields`,
 `williamson*`, `mode`, `perturb` leave it in place), `tracer_at(lat, lon)`, `tracer_mean()`, `tracer_mass()` (mean of h q),
 `tracer_min/max()`, `tracer_error_l2/linf()` (Williamson norms against the tracer at the last state change or `mark_reference`).
@@ -21,7 +25,7 @@ Every tracer diagnostic without a tracer is an error ("no tracer").
 
 `Plane.depth` after fields/perturb/run is an error (it would reset them). Plane rows `j` and columns `i` index cells from the
 south-west corner. CSV outputs are space separated, `%.10g`, rows grouped by latitude/y with blank lines between rows
-(gnuplot `splot ... with pm3d` with `set pm3d map`): sphere `lon lat h u v zeta q` (q = 0 without a tracer), plane
+(gnuplot `splot ... with pm3d` with `set pm3d map`): sphere `lon lat h u v zeta q hs` (q = 0 without a tracer, hs = 0 without orography), plane
 `x y h u v zeta` (u, v at centers).
 `save_zonal_mean`: `lat h_mean u_mean`; `save_row/column`: `x h` / `y h`.
 

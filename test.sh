@@ -85,11 +85,11 @@ done
 for f in build/*.csv build/examples/*.csv; do echo "$(sha "$f") $f"; done >"$WORK/after.txt"
 cmp -s "$WORK/before.txt" "$WORK/after.txt" || fail "result files differ on rerun"
 ok "all $(wc -l <"$WORK/after.txt" | tr -d ' ') result files are byte-identical on rerun"
-# CSV layout: sphere rows are "lon lat h u v zeta q", plane rows "x y h u v zeta", blank line between latitude rows
-[ "$(awk 'NF' build/determinism_sphere.csv | awk '{print NF}' | sort -u)" = 7 ] || fail "sphere CSV does not have 7 columns"
+# CSV layout: sphere rows are "lon lat h u v zeta q hs", plane rows "x y h u v zeta", blank line between latitude rows
+[ "$(awk 'NF' build/determinism_sphere.csv | awk '{print NF}' | sort -u)" = 8 ] || fail "sphere CSV does not have 8 columns"
 [ "$(awk 'NF' build/determinism_plane.csv | awk '{print NF}' | sort -u)" = 6 ] || fail "plane CSV does not have 6 columns"
 [ "$(awk 'NF' build/determinism_sphere.csv | wc -l | tr -d ' ')" = 2048 ] || fail "T21 sphere CSV should have 64 x 32 rows"
-ok "CSV layouts: sphere 7 columns (64 x 32 at T21), plane 6 columns"
+ok "CSV layouts: sphere 8 columns (64 x 32 at T21), plane 6 columns"
 
 # Error paths: each snippet must fail the run with exit 3 and a message naming the problem.
 expect_error() { # name, snippet, expected message fragment
@@ -141,7 +141,8 @@ expect_error accelerated 'let s = wx.sphere(21).fields("5960.0 - 1500.0 * pow(2.
 expect_error no_tracer 'let s = wx.sphere(10).fields("1000", "0", "0"); let q = s.tracer_at(0.0, 0.0);' "no tracer"
 expect_error advect_no_tracer 'let s = wx.sphere(10).fields("1000", "0", "0").advect_only(); s.run(3600.0);' "set a tracer first"
 expect_error tracer_nonfinite 'let s = wx.sphere(10).fields("1000", "0", "0").tracer("1 / (lat - lat)");' "not finite"
-ok "errors stop with exit 3 and clear messages (34 cases)"
+expect_error orography_nonfinite 'let s = wx.sphere(10).orography("1 / (lat - lat)");' "not finite"
+ok "errors stop with exit 3 and clear messages (35 cases)"
 
 # Memory budget: a runaway allocation loop stops with a run error (exit 3, message on stderr and in
 # the JSON line) instead of exhausting the machine. A small budget everywhere; on Linux also the

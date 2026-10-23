@@ -211,6 +211,45 @@ void register_host(dslvm::Registry &r, Host &h) {
     m.set_state_grid(hh, uu, vv);
     return Value::object("Sphere", p);
   });
+  method(r, "Sphere", "orography", {"string"}, "Sphere", [S](void *p, Args &a) {
+    Sphere &m = S(p);
+    const auto &sp = m.params();
+    std::map<std::string, double> par{{"a", sp.radius}, {"omega", sp.omega}, {"g", sp.gravity}};
+    auto es = compile(a[0].s, {"lon", "lat"}, par);
+    size_t n = static_cast<size_t>(m.nlat()) * m.nlon();
+    std::vector<double> hs(n);
+    for (int j = 0; j < m.nlat(); j++)
+      for (int k = 0; k < m.nlon(); k++) {
+        double x[2] = {m.lon(k), m.lat(j)};
+        hs[static_cast<size_t>(j) * m.nlon() + k] = es.eval(x);
+        need(std::isfinite(hs[static_cast<size_t>(j) * m.nlon() + k]), "Sphere.orography: the expression is not finite on the grid");
+      }
+    m.set_orography_grid(hs);
+    return Value::object("Sphere", p);
+  });
+  method(r, "Sphere", "williamson5", {}, "Sphere", [S](void *p, Args &) {
+    // Williamson et al. (1992) test case 5: zonal flow (u0 = 20 m/s, h0 = 5960 m) over an isolated conical mountain
+    // (2000 m, radius pi/9, at 270 E 30 N); the flow starts in the balanced state of test case 2, the fluid thickness
+    // is that free surface minus the mountain
+    Sphere &m = S(p);
+    const auto &sp = m.params();
+    const double u0 = 20.0, h0 = 5960.0, hs0 = 2000.0, R = kPi / 9, lonc = 1.5 * kPi, latc = kPi / 6;
+    m.set_axis_tilt(0);
+    size_t n = static_cast<size_t>(m.nlat()) * m.nlon();
+    std::vector<double> hh(n), uu(n), vv(n, 0.0), hs(n);
+    for (int j = 0; j < m.nlat(); j++)
+      for (int k = 0; k < m.nlon(); k++) {
+        double lat = m.lat(j), lon = m.lon(k);
+        size_t i = static_cast<size_t>(j) * m.nlon() + k;
+        double rr = std::sqrt(std::min(R * R, (lon - lonc) * (lon - lonc) + (lat - latc) * (lat - latc)));
+        hs[i] = hs0 * (1 - rr / R);
+        uu[i] = u0 * std::cos(lat);
+        hh[i] = h0 - (sp.radius * sp.omega * u0 + 0.5 * u0 * u0) * std::sin(lat) * std::sin(lat) / sp.gravity - hs[i];
+      }
+    m.set_orography_grid(hs);
+    m.set_state_grid(hh, uu, vv);
+    return Value::object("Sphere", p);
+  });
   method(r, "Sphere", "tracer", {"string"}, "Sphere", [S](void *p, Args &a) {
     Sphere &m = S(p);
     const auto &sp = m.params();
@@ -308,11 +347,12 @@ void register_host(dslvm::Registry &r, Host &h) {
     Sphere &m = S(p);
     std::vector<double> hh = m.grid_height(), uu = m.grid_u(), vv = m.grid_v(), zz = m.grid_vorticity();
     std::vector<double> qq = m.has_tracer() ? m.grid_tracer() : std::vector<double>(hh.size(), 0.0);
+    const std::vector<double> &hs = m.grid_orography();
     std::string t;
     for (int j = 0; j < m.nlat(); j++) {
       for (int k = 0; k < m.nlon(); k++) {
         size_t i = static_cast<size_t>(j) * m.nlon() + k;
-        t += g(m.lon(k) / kDeg) + " " + g(m.lat(j) / kDeg) + " " + g(hh[i]) + " " + g(uu[i]) + " " + g(vv[i]) + " " + g(zz[i]) + " " + g(qq[i]) + "\n";
+        t += g(m.lon(k) / kDeg) + " " + g(m.lat(j) / kDeg) + " " + g(hh[i]) + " " + g(uu[i]) + " " + g(vv[i]) + " " + g(zz[i]) + " " + g(qq[i]) + " " + g(hs[i]) + "\n";
       }
       t += "\n";  // blank line between latitude rows: gnuplot pm3d
     }

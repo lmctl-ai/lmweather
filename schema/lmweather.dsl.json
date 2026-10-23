@@ -119,6 +119,20 @@
             "returns": "Sphere"
           }
         ],
+        "orography": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "Sphere"
+          }
+        ],
+        "williamson5": [
+          {
+            "params": [],
+            "returns": "Sphere"
+          }
+        ],
         "tracer": [
           {
             "params": [

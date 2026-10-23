@@ -46,10 +46,10 @@ same numbers, bit for bit (seeded noise through `perturb`).
 | `wx.` | |
 | --- | --- |
 | `sphere(T)` `planet(T, radius, omega, g)` → `Sphere` | spectral model, triangular truncation T = 4..170, Gaussian grid (T42: 128 x 64), vorticity-divergence form, RK4, optional del^4 hyperdiffusion |
-| `Sphere` set up | `.williamson1(alpha)` `.williamson2(alpha)` `.williamson6()` `.fields(h, u, v)` `.mode(n, m, amp, depth)` `.perturb(amp, seed, max_wave)` `.tilt(alpha)` `.diffusion(nu4)` `.mark_reference()` |
+| `Sphere` set up | `.williamson1(alpha)` `.williamson2(alpha)` `.williamson5()` `.williamson6()` `.fields(h, u, v)` `.orography(hs)` `.mode(n, m, amp, depth)` `.perturb(amp, seed, max_wave)` `.tilt(alpha)` `.diffusion(nu4)` `.mark_reference()` |
 | `Sphere` tracer | `.tracer(q)` passive scalar carried by the winds; `.advect_only()` freezes the dynamics (prescribed winds); `.tracer_at(lat, lon) .tracer_mean .tracer_mass .tracer_min .tracer_max .tracer_error_l2 .tracer_error_linf` |
 | `Sphere` run | `.run(seconds)` `.run_dt(seconds, dt)` `.stable_dt()` |
-| `Sphere` diagnostics | `.time .mean_height .energy .enstrophy .max_wind .error_l2 .error_linf .height_at(lat, lon) .u_at .v_at .vorticity_at .mode_coefficient(n, m, "re"\|"im") .wave_crest(m, lat)`, `.save_csv(path)` (`lon lat h u v zeta q`) `.save_zonal_mean(path)` |
+| `Sphere` diagnostics | `.time .mean_height .energy .enstrophy .max_wind .error_l2 .error_linf .height_at(lat, lon) .u_at .v_at .vorticity_at .mode_coefficient(n, m, "re"\|"im") .wave_crest(m, lat)`, `.save_csv(path)` (`lon lat h u v zeta q hs`) `.save_zonal_mean(path)` |
 | `plane(nx, ny, Lx, Ly)` → `Plane` | C-grid beta-plane channel: periodic in x, free-slip walls in y, RK4; linear or nonlinear |
 | `Plane` set up | `.depth(H)` `.gravity(g)` `.coriolis(f0, beta)` `.linear()` `.nonlinear()` `.viscosity(nu)` `.drag(r)` `.fields(h_anomaly, u, v)` `.perturb(amp, seed)` |
 | `Plane` run and diagnostics | `.run(seconds)` `.run_dt(seconds, dt)` `.stable_dt() .time .wave_speed .rossby_radius .mean_depth .energy .max_speed .pv_anomaly_rms .h_at .u_at .v_at .zonal_amplitude(m, row) .zonal_crest(m, row)`, `.save_csv(path)` `.save_row(j, path)` `.save_column(i, path)` |

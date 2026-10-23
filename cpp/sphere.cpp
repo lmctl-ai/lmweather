@@ -98,7 +98,14 @@ Sphere::Sphere(int N, const SphereParams &p) : N_(N), p_(p) {
   zeta_.assign(sz, 0);
   delta_.assign(sz, 0);
   phi_.assign(sz, 0);
+  hs_grid_.assign(static_cast<size_t>(nlat_) * nlon_, 0.0);
   set_axis_tilt(0);
+}
+
+void Sphere::set_orography_grid(const std::vector<double> &hs) {
+  if (hs.size() != static_cast<size_t>(nlat_) * nlon_) throw std::invalid_argument("grid size mismatch");
+  hs_grid_ = hs;
+  has_orography_ = true;
 }
 
 void Sphere::set_axis_tilt(double alpha) {
@@ -347,7 +354,7 @@ void Sphere::tendencies(const std::vector<cplx> &z, const std::vector<cplx> &d, 
       B[i] = V[i] * eta;
       UP[i] = U[i] * pg[i];
       VP[i] = V[i] * pg[i];
-      PE[i] = pg[i] + (U[i] * U[i] + V[i] * V[i]) / (2 * om);
+      PE[i] = pg[i] + p_.gravity * hs_grid_[i] + (U[i] * U[i] + V[i] * V[i]) / (2 * om);  // Bernoulli: g (h + hs) + E
     }
   }
   dz.assign(z.size(), 0);
@@ -509,7 +516,7 @@ double Sphere::energy() const {
     double row = 0;
     for (int k = 0; k < nlon_; k++) {
       size_t i = static_cast<size_t>(j) * nlon_ + k;
-      row += 0.5 * h[i] * (u[i] * u[i] + v[i] * v[i]) + 0.5 * p_.gravity * h[i] * h[i];
+      row += 0.5 * h[i] * (u[i] * u[i] + v[i] * v[i]) + 0.5 * p_.gravity * h[i] * h[i] + p_.gravity * h[i] * hs_grid_[i];
     }
     s += w_[j] * row / nlon_;
   }
