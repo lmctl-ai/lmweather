@@ -25,7 +25,7 @@ file(WRITE "${GEN}/notices_embedded.hpp" "#pragma once\n#include <cstddef>\nname
 add_library(weather_core STATIC cpp/sphere.cpp cpp/plane.cpp)
 target_include_directories(weather_core PUBLIC cpp)
 target_compile_options(weather_core PRIVATE -Wall -Wextra -Wpedantic)
-add_executable(lmweather cpp/main.cpp)
+add_executable(lmweather cpp/main.cpp cpp/memory_budget.cpp)
 target_compile_definitions(lmweather PRIVATE LMWEATHER_VERSION="${PROJECT_VERSION}")
 target_include_directories(lmweather PRIVATE cpp "${GEN}")
 target_link_libraries(lmweather PRIVATE weather_core)

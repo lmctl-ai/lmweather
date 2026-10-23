@@ -9,3 +9,4 @@
 - `07-ci.md` — GitHub Actions and releases.
 - `08-examples.md` — the example programs and what they taught.
 - `09-open-items.md` — what is not done.
+- `10-resource-limits.md` — the total memory budget (`LMWEATHER_MAX_MEMORY_MB`) and how it is counted.

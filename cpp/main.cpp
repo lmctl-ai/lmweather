@@ -14,6 +14,7 @@
 
 #include "dslvm.hpp"
 #include "expr.hpp"
+#include "memory_budget.hpp"
 #include "notices_embedded.hpp"
 #include "plane.hpp"
 #include "schema_embedded.hpp"
@@ -392,7 +393,9 @@ void register_host(dslvm::Registry &r, Host &h) {
   });
 }
 
-const char *usage = "usage: lmweather --version | --notices | --dsl-schema [--json] | --dsl-signatures | [--dry-run] --dsl FILE [FILE ...]\n";
+const char *usage = "usage: lmweather --version | --notices | --dsl-schema [--json] | --dsl-signatures | [--dry-run] --dsl FILE [FILE ...]\n"
+                    "environment: LMWEATHER_MAX_MEMORY_MB  total memory budget in MiB (default 4096); a program that needs more\n"
+                    "             stops with a run error (exit 3) instead of allocating\n";
 }  // namespace
 
 int main(int argc, char **argv) {
@@ -434,6 +437,7 @@ int main(int argc, char **argv) {
     } else files.push_back(argv[i]);
   }
   if (files.empty()) { std::cerr << usage; return 2; }
+  if (!membudget::configure("lmweather", "LMWEATHER_MAX_MEMORY_MB")) { std::cerr << usage; return 2; }
   const std::string schema(reinterpret_cast<const char *>(lmweather::embedded_schema), lmweather::embedded_schema_size);
   dslvm::Context ctx;
   Wx wx;
@@ -442,10 +446,12 @@ int main(int argc, char **argv) {
   for (const auto &file : files)
     try { programs.push_back(dslvm::Program::load(dslvm::read_file(file), schema, reg)); }
     catch (const dslvm::Error &e) { return dslvm::report_error("load", e); }
+    catch (const std::exception &e) { return dslvm::report_error("load", dslvm::Error(e.what())); }
   if (dry) { dslvm::report_ok(); return 0; }
   for (const auto &p : programs) {
     try { p.run(ctx, reg); }
     catch (const dslvm::Error &e) { return dslvm::report_error("run", e); }
+    catch (const std::exception &e) { return dslvm::report_error("run", dslvm::Error(e.what())); }  // budget in the VM
     dslvm::report_ok();
   }
   return 0;

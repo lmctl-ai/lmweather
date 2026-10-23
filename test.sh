@@ -133,6 +133,40 @@ expect_error huge_number 'let s = wx.sphere(10).fields("1e400", "0", "0");' "out
 expect_error nonfinite_result 'let s = wx.sphere(10).fields("0", "0", "0"); let e = s.error_l2();' "not finite"
 ok "errors stop with exit 3 and clear messages (30 cases)"
 
+# Memory budget: a runaway allocation loop stops with a run error (exit 3, message on stderr and in
+# the JSON line) instead of exhausting the machine. A small budget everywhere; on Linux also the
+# default 4096 MiB under a 6 GiB address-space limit (ulimit only here, never in the host).
+budget_program() { # name, constructor call
+  cat >"$WORK/$1.lms" <<LMS
+p = _dsl_ cli="lmweather";
+let i = 0;
+while (i < 1000000) {
+  let m = $2;
+  i = i + 1;
+}
+end _dsl_
+savedsl(p, "$WORK/$1.dslb");
+LMS
+  "$LMSCRIPT" "$WORK/$1.lms" >/dev/null || fail "$1.lms compile"
+}
+budget_program runaway 'wx.plane(4000, 2000, 1000000.0, 1000000.0)'
+budget_program runaway_sphere 'wx.sphere(170)'
+for prog in runaway runaway_sphere; do
+  set +e; out="$(LMWEATHER_MAX_MEMORY_MB=64 "$HOST" --dsl "$WORK/$prog.dslb" 2>"$WORK/$prog.err")"; code=$?; set -e
+  [ "$code" = 3 ] || fail "$prog loop under LMWEATHER_MAX_MEMORY_MB=64: exit $code, expected 3 ($out)"
+  echo "$out" | grep -q "memory budget exceeded" || fail "$prog loop: JSON lacks the budget message: $out"
+  grep -q "LMWEATHER_MAX_MEMORY_MB" "$WORK/$prog.err" || fail "$prog loop: no budget message on stderr"
+done
+set +e; LMWEATHER_MAX_MEMORY_MB=-5 "$HOST" --dsl "$WORK/runaway.dslb" >/dev/null 2>"$WORK/badenv.err"; code=$?; set -e
+[ "$code" = 2 ] && grep -q "positive whole number" "$WORK/badenv.err" || fail "bad LMWEATHER_MAX_MEMORY_MB: exit $code"
+if [ "$UNAME_S" = Linux ]; then
+  set +e; out="$(ulimit -v 6291456; "$HOST" --dsl "$WORK/runaway.dslb" 2>/dev/null)"; code=$?; set -e
+  [ "$code" = 3 ] && echo "$out" | grep -q "limit 4096 MiB" || fail "runaway loop with the default budget under ulimit -v 6 GiB: exit $code ($out)"
+  ok "memory budget: runaway plane and T170 sphere loops stop at 64 MiB, the plane loop also at the default 4096 MiB (under ulimit -v 6 GiB)"
+else
+  ok "memory budget: runaway plane and T170 sphere loops stop at LMWEATHER_MAX_MEMORY_MB=64 (default-budget run is Linux-only)"
+fi
+
 # README gallery: every linked example and image exists, images are valid PNG/GIF within the size limits.
 magic_ok() { # file
   case "$1" in

@@ -110,6 +110,13 @@ and analysis data, none of which can live in one self-contained executable, so i
 shallow-water layer that numerical weather prediction methods are validated on: no moisture, radiation, boundary layer,
 orography or real-data initialization. See [durable-memory/09-open-items.md](durable-memory/09-open-items.md).
 
+## Resource limits
+
+A program may use at most 4096 MiB in total (sphere and plane grids, spectral tables, CSV text,
+everything the host keeps); beyond that it stops with a run error (exit 3) naming the limit, instead
+of exhausting the machine. Set `LMWEATHER_MAX_MEMORY_MB` to change it, e.g.
+`LMWEATHER_MAX_MEMORY_MB=16384 lmscript big.lms`.
+
 ## License
 
 MIT ([LICENSE](LICENSE)); no third-party code ([THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES) cites the methods).
