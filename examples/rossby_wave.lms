@@ -1,0 +1,27 @@
+# A Rossby wave on a beta-plane channel drifts west at c = -beta / (k^2 + l^2 + 1/Ld^2); ten days of the height field to CSV.
+out = ARGV.len() > 0 ? ARGV[0] : "build/rossby_wave.dslb";
+p = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let pi = 3.141592653589793;
+let lx = 4000000.0;
+let ly = 2000000.0;
+let beta = 0.00000000002;
+let m = wx.plane(60, 30, lx, ly).depth(1000.0).coriolis(0.0001, beta).linear();
+let k = 2.0 * pi / lx;
+let l = pi / ly;
+let ld = m.rossby_radius();
+let cp = -beta / (k * k + l * l + 1.0 / (ld * ld));
+wx.print("predicted phase speed " + str(cp) + " m/s");
+m.fields("0.0001 * 100000.0 * cos(2 * pi * x / lx) * sin(pi * y / ly) / g", "-100000.0 * pi / ly * cos(2 * pi * x / lx) * cos(pi * y / ly)", "-100000.0 * 2 * pi / lx * sin(2 * pi * x / lx) * sin(pi * y / ly)");
+m.save_csv("build/examples/rossby_day0.csv");
+let c0 = m.zonal_crest(1, 15);
+m.run(10.0 * 86400.0);
+m.save_csv("build/examples/rossby_day10.csv");
+let shift = m.zonal_crest(1, 15) - c0;
+shift = shift - floor(shift / lx + 0.5) * lx;
+let predicted = cp * 864000.0;
+wx.print("crest moved " + str(shift / 1000.0) + " km in 10 days; prediction " + str((predicted - floor(predicted / lx + 0.5) * lx) / 1000.0) + " km (the westward " + str(predicted / 1000.0) + " km modulo the 4000 km wavelength)");
+let diff = shift - cp * 864000.0;
+diff = diff - floor(diff / lx + 0.5) * lx;      # crests repeat every wavelength
+wx.assert_close(diff, 0.0, 60000.0);
+end _dsl_
+savedsl(p, out);

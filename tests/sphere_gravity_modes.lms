@@ -1,0 +1,39 @@
+# Linear gravity waves on a non-rotating sphere of resting depth H: the spherical harmonic Y_n^m oscillates at
+# omega = sqrt(n (n + 1) g H) / a exactly (the equations decouple by degree).
+out = ARGV.len() > 0 ? ARGV[0] : "build/sphere_gravity_modes.dslb";
+p = _dsl_ cli="lmweather";
+let pi = 3.141592653589793;
+let a = 6371220.0;
+let g = 9.80616;
+let depth = 1000.0;
+for (i in range(0, 4)) {
+  let n = 2 + i * 3;
+  let m = i;
+  let omega = sqrt(float(n * (n + 1)) * g * depth) / a;
+  let period = 2.0 * pi / omega;
+  let s = wx.planet(21, a, 0.0, g).mode(n, m, 1.0, depth);
+  let c0 = s.mode_coefficient(n, m, "re");
+  # m > 0 harmonics are stored as half of the real amplitude (the other half is the conjugate)
+  if (m == 0) { wx.assert_close(c0, 1.0, 0.0000001); }
+  if (m > 0) { wx.assert_close(c0, 0.5, 0.0000001); }
+  # amplitude 1 m on 1000 m: nonlinear frequency shift ~1e-3 of the amplitude ratio
+  s.run_dt(0.25 * period, 500.0);
+  wx.assert_close(s.mode_coefficient(n, m, "re") / c0, 0.0, 0.01);
+  s.run_dt(0.25 * period, 500.0);
+  wx.assert_close(s.mode_coefficient(n, m, "re") / c0, -1.0, 0.003);
+  s.run_dt(period, 500.0);
+  wx.assert_close(s.mode_coefficient(n, m, "re") / c0, -1.0, 0.006);
+  wx.assert_close(s.mean_height(), depth, 0.000000001);
+}
+# energy of a small linear wave is conserved
+let e = wx.planet(21, a, 0.0, g).mode(4, 2, 1.0, depth);
+let e0 = e.energy();
+e.run_dt(40000.0, 500.0);
+wx.assert_close(e.energy() / e0, 1.0, 0.00000001);
+# the deeper the layer the faster: doubling H raises the frequency by sqrt(2), so the half period halves by 1/sqrt(2)
+let fast = wx.planet(21, a, 0.0, g).mode(5, 1, 1.0, 2000.0);
+let half = pi / (sqrt(30.0 * g * 2000.0) / a);
+fast.run_dt(half, 500.0);
+wx.assert_close(fast.mode_coefficient(5, 1, "re") / 0.5, -1.0, 0.003);
+end _dsl_
+savedsl(p, out);

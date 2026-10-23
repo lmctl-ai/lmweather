@@ -1,0 +1,23 @@
+# A Gaussian height pulse on a non-rotating channel splits into two pulses that travel at c = sqrt(g H) in both directions.
+out = ARGV.len() > 0 ? ARGV[0] : "build/gravity_pulse.dslb";
+p = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let lx = 4000000.0;
+let m = wx.plane(400, 6, lx, 60000.0).depth(100.0).linear();
+m.fields("pow(2.718281828459045, -(x - lx / 2) * (x - lx / 2) / 10000000000.0)", "0", "0");
+let c = m.wave_speed();
+wx.print("wave speed " + str(c) + " m/s");
+m.save_row(3, "build/examples/pulse_0.csv");
+m.run(30000.0);
+m.save_row(3, "build/examples/pulse_1.csv");
+# the east-going pulse sits at lx/2 + c t: find the maximum of h to the east of the center
+let best = 0.0; let at = 0.0;
+for (i in range(0, 200)) {
+  let x = 0.5 * lx + 10000.0 * float(i);
+  let hh = m.h_at(x, 30000.0);
+  if (hh > best) { best = hh; at = x; }
+}
+wx.print("east pulse at " + str((at - 0.5 * lx) / 1000.0) + " km, expected " + str(c * 30.0) + " km; height " + str(best - 100.0) + " m (half the 1 m pulse)");
+wx.assert_close(at - 0.5 * lx, c * 30000.0, 20000.0);
+wx.assert_close(best - 100.0, 0.5, 0.02);
+end _dsl_
+savedsl(p, out);

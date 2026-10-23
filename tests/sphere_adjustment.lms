@@ -1,0 +1,46 @@
+# Geostrophic adjustment on the rotating sphere: a seeded random height anomaly on a resting 5960 m layer spins up
+# winds; mass is conserved exactly and energy to the time-stepping error; the same seed gives the same bits.
+out = ARGV.len() > 0 ? ARGV[0] : "build/sphere_adjustment.dslb";
+p = _dsl_ cli="lmweather";
+let s = wx.sphere(21).fields("5960.0", "0", "0").perturb(30.0, 7, 8);
+let rest = wx.sphere(21).fields("5960.0", "0", "0");
+wx.assert_close(rest.max_wind(), 0.0, 0.0000000001);
+wx.assert_close(s.max_wind(), 0.0, 0.0000000001);
+let m0 = s.mean_height();
+let e0 = s.energy();
+wx.assert_close(m0, 5960.0, 0.0000000001);        # the perturbation has zero mean
+s.run_dt(5.0 * 86400.0, 1800.0);
+# the height anomaly drives winds (geostrophic adjustment): tens of cm/s to m/s
+wx.assert_true(s.max_wind() > 1.0 && s.max_wind() < 60.0);
+wx.assert_close(s.mean_height(), m0, 0.000000001);
+wx.assert_close(s.energy() / e0, 1.0, 0.00001);
+# a localized height low at 45 N: the winds that develop circulate cyclonically (counter-clockwise in the northern
+# hemisphere): positive relative vorticity at its center, eastward flow to its south and westward flow to its north
+let low = wx.sphere(42).fields("5960.0 - 100.0 * pow(2.718281828459045, -((lon * cos(lat)) * (lon * cos(lat)) + (lat - 0.7853981633974483) * (lat - 0.7853981633974483)) / 0.04)", "0", "0");
+wx.assert_close(low.max_wind(), 0.0, 0.0000000001);
+low.run_dt(86400.0, 900.0);
+wx.assert_true(low.vorticity_at(45.0, 0.0) > 0.0000005);
+wx.assert_true(low.u_at(35.0, 0.0) > 0.1);
+wx.assert_true(low.u_at(55.0, 0.0) < -0.1);
+# and the mirror image in the southern hemisphere circulates the other way
+let slow = wx.sphere(42).fields("5960.0 - 100.0 * pow(2.718281828459045, -((lon * cos(lat)) * (lon * cos(lat)) + (lat + 0.7853981633974483) * (lat + 0.7853981633974483)) / 0.04)", "0", "0");
+slow.run_dt(86400.0, 900.0);
+wx.assert_true(slow.vorticity_at(-45.0, 0.0) < -0.0000005);
+wx.assert_close(slow.energy(), low.energy(), 0.01 * low.energy());
+# reproducible: same seed, same bits; another seed differs
+let t = wx.sphere(21).fields("5960.0", "0", "0").perturb(30.0, 7, 8);
+t.run_dt(5.0 * 86400.0, 1800.0);
+wx.assert_close(t.energy(), s.energy(), 0.0);
+wx.assert_close(t.height_at(10.0, 20.0), s.height_at(10.0, 20.0), 0.0);
+let u = wx.sphere(21).fields("5960.0", "0", "0").perturb(30.0, 8, 8);
+u.run_dt(5.0 * 86400.0, 1800.0);
+wx.assert_true(u.height_at(10.0, 20.0) != s.height_at(10.0, 20.0));
+# diffusion damps: with hyperdiffusion the energy of a perturbed state falls, without it it does not
+let d = wx.sphere(21).fields("5960.0", "0", "0").perturb(30.0, 7, 12).diffusion(100000000000000.0);
+let nd = wx.sphere(21).fields("5960.0", "0", "0").perturb(30.0, 7, 12);
+d.run_dt(5.0 * 86400.0, 1800.0);
+nd.run_dt(5.0 * 86400.0, 1800.0);
+wx.assert_true(d.energy() < nd.energy());
+wx.assert_close(d.mean_height(), 5960.0, 0.000000001);
+end _dsl_
+savedsl(p, out);

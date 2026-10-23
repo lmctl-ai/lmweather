@@ -1,0 +1,18 @@
+# Seeded runs are reproducible bit for bit on both models; CSV outputs are written and identical on rerun (test.sh compares).
+out = ARGV.len() > 0 ? ARGV[0] : "build/determinism.dslb";
+p = _dsl_ cli="lmweather";
+let a = wx.plane(40, 20, 4000000.0, 2000000.0).depth(500.0).coriolis(0.0001, 0.00000000002).perturb(1.0, 99);
+let b = wx.plane(40, 20, 4000000.0, 2000000.0).depth(500.0).coriolis(0.0001, 0.00000000002).perturb(1.0, 99);
+let c = wx.plane(40, 20, 4000000.0, 2000000.0).depth(500.0).coriolis(0.0001, 0.00000000002).perturb(1.0, 100);
+a.run(86400.0); b.run(86400.0); c.run(86400.0);
+wx.assert_close(a.energy(), b.energy(), 0.0);
+wx.assert_close(a.h_at(1234567.0, 999999.0), b.h_at(1234567.0, 999999.0), 0.0);
+wx.assert_true(a.h_at(1234567.0, 999999.0) != c.h_at(1234567.0, 999999.0));
+wx.assert_close(a.mean_depth(), 500.0, 0.000000001);
+a.save_csv("build/determinism_plane.csv");
+let s = wx.sphere(21).williamson6();
+s.run_dt(43200.0, 1800.0);
+s.save_csv("build/determinism_sphere.csv");
+s.save_zonal_mean("build/determinism_zonal.csv");
+end _dsl_
+savedsl(p, out);

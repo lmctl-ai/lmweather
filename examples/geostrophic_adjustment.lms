@@ -1,0 +1,42 @@
+# Rossby adjustment in a channel: a height bump releases gravity waves and settles into geostrophic balance, with the
+# final profile predicted by conservation of potential vorticity.
+out = ARGV.len() > 0 ? ARGV[0] : "build/geostrophic_adjustment.dslb";
+p = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let pi = 3.141592653589793;
+let ly = 4000000.0;
+let ny = 200;
+let m = wx.plane(8, ny, 40000.0, ly).depth(1000.0).coriolis(0.0001, 0.0).linear();
+m.fields("pow(2.718281828459045, -(y - ly / 2) * (y - ly / 2) / 160000000000.0)", "0", "0");
+let ld = m.rossby_radius();
+wx.print("Rossby radius " + str(ld / 1000.0) + " km, wave speed " + str(m.wave_speed()) + " m/s");
+m.save_column(3, "build/examples/adjust_initial.csv");
+let q0 = m.pv_anomaly_rms();
+let tin = 2.0 * pi / 0.0001;
+m.run(5.0 * tin);
+# time mean over 10 inertial periods = the balanced state
+let rows = "";
+let avg = 0.0;
+for (s in range(0, 80)) {
+  m.run(tin / 8.0);
+  avg = avg + m.h_at(20000.0, 0.5 * ly) - 1000.0;
+}
+avg = avg / 80.0;
+m.save_column(3, "build/examples/adjust_final.csv");
+# the predicted center height from the cosine series
+let pred = 0.0;
+for (n in range(0, ny)) {
+  let c = 0.0;
+  for (j in range(0, ny)) {
+    let yy = (float(j) + 0.5) * ly / float(ny);
+    c = c + pow(2.718281828459045, -(yy - ly / 2.0) * (yy - ly / 2.0) / 160000000000.0) * cos(float(n) * pi * (float(j) + 0.5) / float(ny));
+  }
+  let norm = 2.0 / float(ny);
+  if (n == 0) { norm = 1.0 / float(ny); }
+  let kk = float(n) * pi / ly;
+  pred = pred + c * norm / (1.0 + kk * kk * ld * ld) * cos(float(n) * pi * 0.5);
+}
+wx.print("balanced height anomaly at the center: simulated " + str(avg) + " m, predicted " + str(pred) + " m (initial 1 m)");
+wx.assert_close(avg, pred, 0.01);
+wx.assert_close(m.pv_anomaly_rms() / q0, 1.0, 0.001);   # potential vorticity is conserved
+end _dsl_
+savedsl(p, out);

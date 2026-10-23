@@ -1,0 +1,20 @@
+Third-party notices for lmweather
+=================================
+
+lmweather's own code (cpp/, schema/, scripts/, examples/, tests/; including the vendored `cpp/dslvm.hpp`
+runtime from the cpp-dsl-sdk project and `cpp/expr.hpp`, the expression compiler shared with the lmnum host) is
+Copyright (c) 2026 Lattice Systems LLC, MIT license (see LICENSE). `lmweather --notices` prints this file.
+There is no third-party source code in the binary: the FFT, Gauss-Legendre quadrature, associated Legendre
+functions, spherical-harmonic transforms and the finite-difference model are implemented here from the published
+algorithms.
+
+Methods and test cases (cited, not copied)
+------------------------------------------
+- Spectral transform shallow-water model in the vorticity-divergence form: J.J. Hack and R. Jakob, "Description
+  of a global shallow water model based on the spectral transform method", NCAR/TN-343+STR (1992).
+- Standard test cases: D.L. Williamson, J.B. Drake, J.J. Hack, R. Jakob and P.N. Swarztrauber, "A standard test
+  set for numerical approximations to the shallow water equations in spherical geometry", J. Comput. Phys. 102
+  (1992) 211-224 (test case 2: steady geostrophic flow; test case 6: Rossby-Haurwitz wave).
+- Arakawa C-grid finite differences: A. Arakawa and V.R. Lamb (1977); geostrophic adjustment: C.-G. Rossby (1938).
+
+No code of WRF, MPAS, SHTNS, Dedalus or any other weather or climate code is included. WRF is not used.

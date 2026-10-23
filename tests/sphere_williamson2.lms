@@ -1,0 +1,37 @@
+# Williamson et al. (1992) test case 2: steady-state geostrophic flow (solid-body rotation balanced by the height field),
+# for rotation-axis tilts 0, 0.05, pi/2 - 0.05 and pi/2. The state must not change in 5 days.
+out = ARGV.len() > 0 ? ARGV[0] : "build/sphere_williamson2.dslb";
+p = _dsl_ cli="lmweather";
+let pi = 3.141592653589793;
+let tilt = 0.0;
+for (i in range(0, 4)) {
+  if (i == 1) { tilt = 0.05; }
+  if (i == 2) { tilt = pi / 2.0 - 0.05; }
+  if (i == 3) { tilt = pi / 2.0; }
+  let s = wx.sphere(21).williamson2(tilt);
+  let mean0 = s.mean_height();
+  let e0 = s.energy();
+  s.run_dt(432000.0, 1800.0);
+  wx.assert_close(s.time(), 432000.0, 0.0000001);
+  # Williamson's normalized height errors after 5 days (spectral models reach ~1e-6 at T42; this one is exact to rounding)
+  wx.assert_true(s.error_l2() < 0.000001);
+  wx.assert_true(s.error_linf() < 0.000001);
+  wx.assert_close(s.mean_height(), mean0, 0.000000001);
+  wx.assert_close(s.energy() / e0, 1.0, 0.000000001);
+}
+# reference values of the unperturbed state: u0 = 2 pi a / 12 days = 38.6 m/s, h = h0 at the equator, h0 - (a Omega u0 + u0^2/2) / g at the poles
+let s = wx.sphere(42).williamson2(0.0);
+let g = 9.80616;
+let a = 6371220.0;
+let u0 = 2.0 * pi * a / (12.0 * 86400.0);
+let h0 = 29400.0 / g;
+wx.assert_close(s.max_wind(), u0, 0.02);   # the grid has no latitude exactly at the equator
+wx.assert_close(s.height_at(0.0, 0.0), h0, 0.001);
+wx.assert_close(s.height_at(90.0, 0.0), h0 - (a * 0.00007292 * u0 + 0.5 * u0 * u0) / g, 0.001);
+wx.assert_close(s.mean_height(), 2363.02, 0.01);
+# the test is meaningful: the same flow on a planet whose axis is NOT tilted (so f no longer matches the flow) does not stay put
+let wrong = wx.sphere(21).fields("29400.0 / g - (a * omega * 38.6106 + 38.6106 * 38.6106 / 2.0) * pow(0 - cos(lon) * cos(lat) * sin(1.5) + sin(lat) * cos(1.5), 2) / g", "38.6106 * (cos(lat) * cos(1.5) + sin(lat) * cos(lon) * sin(1.5))", "0 - 38.6106 * sin(lon) * sin(1.5)");
+wrong.run_dt(86400.0, 1800.0);
+wx.assert_true(wrong.error_l2() > 0.001);
+end _dsl_
+savedsl(p, out);

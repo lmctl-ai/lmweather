@@ -1,0 +1,531 @@
+{
+  "dsl.schema": 2,
+  "name": "lmweather",
+  "types": {
+    "Wx": {
+      "methods": {
+        "sphere": [
+          {
+            "params": [
+              "int"
+            ],
+            "returns": "Sphere"
+          }
+        ],
+        "planet": [
+          {
+            "params": [
+              "int",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "Sphere"
+          }
+        ],
+        "plane": [
+          {
+            "params": [
+              "int",
+              "int",
+              "float",
+              "float"
+            ],
+            "returns": "Plane"
+          }
+        ],
+        "assert_close": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "assert_true": [
+          {
+            "params": [
+              "bool"
+            ],
+            "returns": "void"
+          }
+        ],
+        "print": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "void"
+          }
+        ],
+        "save_text": [
+          {
+            "params": [
+              "string",
+              "string"
+            ],
+            "returns": "void"
+          }
+        ],
+        "version": [
+          {
+            "params": [],
+            "returns": "string"
+          }
+        ]
+      }
+    },
+    "Sphere": {
+      "methods": {
+        "tilt": [
+          {
+            "params": [
+              "float"
+            ],
+            "returns": "Sphere"
+          }
+        ],
+        "diffusion": [
+          {
+            "params": [
+              "float"
+            ],
+            "returns": "Sphere"
+          }
+        ],
+        "fields": [
+          {
+            "params": [
+              "string",
+              "string",
+              "string"
+            ],
+            "returns": "Sphere"
+          }
+        ],
+        "williamson2": [
+          {
+            "params": [
+              "float"
+            ],
+            "returns": "Sphere"
+          }
+        ],
+        "williamson6": [
+          {
+            "params": [],
+            "returns": "Sphere"
+          }
+        ],
+        "mode": [
+          {
+            "params": [
+              "int",
+              "int",
+              "float",
+              "float"
+            ],
+            "returns": "Sphere"
+          }
+        ],
+        "perturb": [
+          {
+            "params": [
+              "float",
+              "int",
+              "int"
+            ],
+            "returns": "Sphere"
+          }
+        ],
+        "mark_reference": [
+          {
+            "params": [],
+            "returns": "Sphere"
+          }
+        ],
+        "run": [
+          {
+            "params": [
+              "float"
+            ],
+            "returns": "Sphere"
+          }
+        ],
+        "run_dt": [
+          {
+            "params": [
+              "float",
+              "float"
+            ],
+            "returns": "Sphere"
+          }
+        ],
+        "stable_dt": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "time": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "truncation": [
+          {
+            "params": [],
+            "returns": "int"
+          }
+        ],
+        "nlat": [
+          {
+            "params": [],
+            "returns": "int"
+          }
+        ],
+        "nlon": [
+          {
+            "params": [],
+            "returns": "int"
+          }
+        ],
+        "mean_height": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "energy": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "enstrophy": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "max_wind": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "error_l2": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "error_linf": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "height_at": [
+          {
+            "params": [
+              "float",
+              "float"
+            ],
+            "returns": "float"
+          }
+        ],
+        "u_at": [
+          {
+            "params": [
+              "float",
+              "float"
+            ],
+            "returns": "float"
+          }
+        ],
+        "v_at": [
+          {
+            "params": [
+              "float",
+              "float"
+            ],
+            "returns": "float"
+          }
+        ],
+        "vorticity_at": [
+          {
+            "params": [
+              "float",
+              "float"
+            ],
+            "returns": "float"
+          }
+        ],
+        "mode_coefficient": [
+          {
+            "params": [
+              "int",
+              "int",
+              "string"
+            ],
+            "returns": "float"
+          }
+        ],
+        "wave_crest": [
+          {
+            "params": [
+              "int",
+              "float"
+            ],
+            "returns": "float"
+          }
+        ],
+        "save_csv": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "void"
+          }
+        ],
+        "save_zonal_mean": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "void"
+          }
+        ]
+      }
+    },
+    "Plane": {
+      "methods": {
+        "gravity": [
+          {
+            "params": [
+              "float"
+            ],
+            "returns": "Plane"
+          }
+        ],
+        "depth": [
+          {
+            "params": [
+              "float"
+            ],
+            "returns": "Plane"
+          }
+        ],
+        "coriolis": [
+          {
+            "params": [
+              "float",
+              "float"
+            ],
+            "returns": "Plane"
+          }
+        ],
+        "linear": [
+          {
+            "params": [],
+            "returns": "Plane"
+          }
+        ],
+        "nonlinear": [
+          {
+            "params": [],
+            "returns": "Plane"
+          }
+        ],
+        "viscosity": [
+          {
+            "params": [
+              "float"
+            ],
+            "returns": "Plane"
+          }
+        ],
+        "drag": [
+          {
+            "params": [
+              "float"
+            ],
+            "returns": "Plane"
+          }
+        ],
+        "fields": [
+          {
+            "params": [
+              "string",
+              "string",
+              "string"
+            ],
+            "returns": "Plane"
+          }
+        ],
+        "perturb": [
+          {
+            "params": [
+              "float",
+              "int"
+            ],
+            "returns": "Plane"
+          }
+        ],
+        "run": [
+          {
+            "params": [
+              "float"
+            ],
+            "returns": "Plane"
+          }
+        ],
+        "run_dt": [
+          {
+            "params": [
+              "float",
+              "float"
+            ],
+            "returns": "Plane"
+          }
+        ],
+        "stable_dt": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "time": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "wave_speed": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "rossby_radius": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "mean_depth": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "energy": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "max_speed": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "pv_anomaly_rms": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "h_at": [
+          {
+            "params": [
+              "float",
+              "float"
+            ],
+            "returns": "float"
+          }
+        ],
+        "u_at": [
+          {
+            "params": [
+              "float",
+              "float"
+            ],
+            "returns": "float"
+          }
+        ],
+        "v_at": [
+          {
+            "params": [
+              "float",
+              "float"
+            ],
+            "returns": "float"
+          }
+        ],
+        "zonal_amplitude": [
+          {
+            "params": [
+              "int",
+              "int"
+            ],
+            "returns": "float"
+          }
+        ],
+        "zonal_crest": [
+          {
+            "params": [
+              "int",
+              "int"
+            ],
+            "returns": "float"
+          }
+        ],
+        "v_zonal_crest": [
+          {
+            "params": [
+              "int",
+              "int"
+            ],
+            "returns": "float"
+          }
+        ],
+        "save_csv": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "void"
+          }
+        ],
+        "save_row": [
+          {
+            "params": [
+              "int",
+              "string"
+            ],
+            "returns": "void"
+          }
+        ],
+        "save_column": [
+          {
+            "params": [
+              "int",
+              "string"
+            ],
+            "returns": "void"
+          }
+        ]
+      }
+    }
+  },
+  "functions": {},
+  "context": {
+    "wx": "Wx"
+  }
+}

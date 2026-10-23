@@ -1,0 +1,32 @@
+# Rossby wave on a beta-plane channel after 10 days: the height field has drifted west.
+# Two hosts in one script: lmweather integrates the model and writes a CSV, lmplot (gnuplot in a static binary) draws it.
+# Needs lmplot on PATH or installable; the PNG lands in build/examples/rossby_wave_plot.png.
+mkdir("build/examples");
+sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+
+let lx = 4000000.0;
+let ly = 2000000.0;
+let m = wx.plane(60, 30, lx, ly).depth(1000.0).coriolis(0.0001, 0.00000000002).linear();
+m.fields("0.0001 * 100000.0 * cos(2 * pi * x / lx) * sin(pi * y / ly) / g", "-100000.0 * pi / ly * cos(2 * pi * x / lx) * cos(pi * y / ly)", "-100000.0 * 2 * pi / lx * sin(2 * pi * x / lx) * sin(pi * y / ly)");
+m.run(10.0 * 86400.0);
+m.save_csv("build/examples/rossby_wave_plot.csv");
+end _dsl_
+savedsl(sim, "build/rossby_wave_plot-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl build/rossby_wave_plot-sim.dslb;
+assert(r.code == 0);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("build/examples/rossby_wave_plot.png", 1000, 600);
+plot.cmd("set title 'Rossby wave after 10 days: height [m] (lmweather beta-plane, drawn by lmplot)'");
+plot.cmd("set xlabel 'x [m]'");
+plot.cmd("set ylabel 'y [m]'");
+plot.cmd("set pm3d map");
+plot.cmd("set palette rgbformula 33,13,10");
+plot.cmd("unset key");
+plot.cmd("splot 'build/examples/rossby_wave_plot.csv' using 1:2:3 with pm3d");
+plot.close();
+end _dsl_
+savedsl(draw, "build/rossby_wave_plot-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl build/rossby_wave_plot-draw.dslb;
+assert(r.code == 0);
+println("wrote build/examples/rossby_wave_plot.png");

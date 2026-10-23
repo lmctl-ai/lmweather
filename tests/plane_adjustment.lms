@@ -1,0 +1,65 @@
+# Geostrophic (Rossby) adjustment in a channel: an unbalanced height bump radiates gravity waves and settles into the
+# state fixed by conservation of linear potential vorticity, eta^_n = eta0^_n / (1 + (n pi Ld / Ly)^2) in cosine modes.
+out = ARGV.len() > 0 ? ARGV[0] : "build/plane_adjustment.dslb";
+p = _dsl_ cli="lmweather";
+let pi = 3.141592653589793;
+let ny = 200;
+let ly = 4000000.0;
+let f0 = 0.0001;
+let m = wx.plane(8, ny, 40000.0, ly).depth(1000.0).coriolis(f0, 0.0).linear();
+m.fields("exp(-(y - ly / 2) * (y - ly / 2) / 160000000000.0)", "0", "0");
+let ld = m.rossby_radius();
+wx.assert_close(ld, 990515.0, 100.0);
+let q0 = m.pv_anomaly_rms();
+let mean0 = m.mean_depth();
+let e0 = m.energy();
+# the linear potential vorticity is conserved by the discrete equations at every corner
+let tin = 2.0 * pi / f0;
+m.run(5.0 * tin);
+wx.assert_close(m.pv_anomaly_rms() / q0, 1.0, 0.001);
+wx.assert_close(m.mean_depth(), mean0, 0.00000000001);
+# time mean over 10 inertial periods (the inertia-gravity oscillations average out); sample 3 rows
+let a1 = 0.0; let a2 = 0.0; let a3 = 0.0; let a4 = 0.0; let a5 = 0.0;
+let samples = 80;
+for (s in range(0, samples)) {
+  m.run(tin / 8.0);
+  a1 = a1 + m.h_at(20000.0, 0.5 * ly) - 1000.0;
+  a2 = a2 + m.h_at(20000.0, 0.5 * ly + 400000.0) - 1000.0;
+  a3 = a3 + m.h_at(20000.0, 0.5 * ly + 800000.0) - 1000.0;
+  a4 = a4 + m.h_at(20000.0, 0.5 * ly + 1200000.0) - 1000.0;
+  a5 = a5 + m.h_at(20000.0, 0.5 * ly - 600000.0) - 1000.0;
+}
+# prediction by the cosine series on the cell centers
+let dy = ly / float(ny);
+let pred1 = 0.0; let pred2 = 0.0; let pred3 = 0.0; let pred4 = 0.0; let pred5 = 0.0;
+for (n in range(0, ny)) {
+  let c = 0.0;
+  for (j in range(0, ny)) {
+    let yy = (float(j) + 0.5) * dy;
+    c = c + pow(2.718281828459045, -(yy - ly / 2.0) * (yy - ly / 2.0) / 160000000000.0) * cos(float(n) * pi * (float(j) + 0.5) / float(ny));
+  }
+  let norm = 2.0 / float(ny);
+  if (n == 0) { norm = 1.0 / float(ny); }
+  let kk = float(n) * pi / ly;
+  c = c * norm / (1.0 + kk * kk * ld * ld);
+  pred1 = pred1 + c * cos(float(n) * pi * 0.5);
+  pred2 = pred2 + c * cos(float(n) * pi * (0.5 * ly + 400000.0) / ly);
+  pred3 = pred3 + c * cos(float(n) * pi * (0.5 * ly + 800000.0) / ly);
+  pred4 = pred4 + c * cos(float(n) * pi * (0.5 * ly + 1200000.0) / ly);
+  pred5 = pred5 + c * cos(float(n) * pi * (0.5 * ly - 600000.0) / ly);
+}
+let sm = float(samples);
+wx.print("center: mean " + str(a1 / sm) + " predicted " + str(pred1));
+wx.assert_close(a1 / sm, pred1, 0.015);
+wx.assert_close(a2 / sm, pred2, 0.015);
+wx.assert_close(a3 / sm, pred3, 0.015);
+wx.assert_close(a4 / sm, pred4, 0.015);
+wx.assert_close(a5 / sm, pred5, 0.015);
+# the adjusted bump is lower and broader than the initial one: a third of the height anomaly is left at the center
+wx.assert_true(pred1 > 0.25 && pred1 < 0.4);
+# the balanced state has a geostrophic jet along the channel, u = -(g / f) dh/dy
+wx.assert_true(m.max_speed() > 0.01 && m.max_speed() < 0.2);
+# energy cannot grow (linear energy is conserved to the time stepping error)
+wx.assert_close(m.energy() / e0, 1.0, 0.0005);
+end _dsl_
+savedsl(p, out);

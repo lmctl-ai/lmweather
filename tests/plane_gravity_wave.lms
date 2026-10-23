@@ -1,0 +1,43 @@
+# Shallow-water gravity waves on a plane: phase speed sqrt(g H), standing and travelling waves, mass conservation.
+out = ARGV.len() > 0 ? ARGV[0] : "build/plane_gravity_wave.dslb";
+p = _dsl_ cli="lmweather";
+let pi = 3.141592653589793;
+let lx = 2000000.0;
+# H = 100 m: c = sqrt(9.81 * 100) = 31.32 m/s
+let w = wx.plane(200, 8, lx, 40000.0).depth(100.0).linear();
+wx.assert_close(w.wave_speed(), 31.3209195267, 0.000001);
+let c = w.wave_speed();
+let k = 2.0 * pi / lx;
+# standing wave h = a cos(kx), u = 0: after half a period T/2 = pi / (c k) it is -a cos(kx)
+let a = 1.0;
+w.fields("cos(2 * pi * x / lx)", "0", "0");
+w.run(pi / (c * k));
+wx.assert_close(w.h_at(0.5 * lx / 200.0, 20000.0) - 100.0, -cos(k * 0.5 * lx / 200.0), 0.0005);
+wx.assert_close(w.zonal_amplitude(1, 3), 1.0, 0.0005);
+wx.assert_close(w.mean_depth(), 100.0, 0.0000000001);
+# a full period returns it
+w.run(pi / (c * k));
+wx.assert_close(w.h_at(0.5 * lx / 200.0, 20000.0) - 100.0, cos(k * 0.5 * lx / 200.0), 0.001);
+# travelling wave (u = (c / H) h') moves at c: after t = 10 * 30 km / c the crest is 300 km east, also with the nonlinear equations
+let t = 300000.0 / c;
+let tw = wx.plane(200, 8, lx, 40000.0).depth(100.0);
+tw.fields("0.5 * cos(2 * pi * x / lx)", "0.5 * 31.3209195267 / 100.0 * cos(2 * pi * x / lx)", "0");
+tw.run(t);
+wx.assert_close(tw.zonal_crest(1, 3), 300000.0, 2500.0);
+wx.assert_close(tw.mean_depth(), 100.0, 0.0000000001);
+# the same wave travelling west when u has the opposite sign
+let tw2 = wx.plane(200, 8, lx, 40000.0).depth(100.0).linear();
+tw2.fields("0.5 * cos(2 * pi * x / lx)", "-0.5 * 31.3209195267 / 100.0 * cos(2 * pi * x / lx)", "0");
+tw2.run(t);
+wx.assert_close(tw2.zonal_crest(1, 3), lx - 300000.0, 2500.0);
+# a wave on a deeper layer is faster: H = 400 m doubles the speed
+let deep = wx.plane(200, 8, lx, 40000.0).depth(400.0).linear();
+wx.assert_close(deep.wave_speed(), 2.0 * c, 0.000001);
+# energy of the linear standing wave is conserved
+let e = wx.plane(100, 8, lx, 80000.0).depth(100.0).linear();
+e.fields("cos(2 * pi * x / lx)", "0", "0");
+let e0 = e.energy();
+e.run(20000.0);
+wx.assert_close(e.energy() / e0, 1.0, 0.0001);
+end _dsl_
+savedsl(p, out);

@@ -1,0 +1,41 @@
+# Williamson test case 6: Rossby-Haurwitz wave of zonal wavenumber 4. Mass is conserved exactly, energy and potential
+# enstrophy to truncation error, and the pattern moves east at about nu = (R (3 + R) w - 2 Omega) / ((1 + R)(2 + R)).
+out = ARGV.len() > 0 ? ARGV[0] : "build/sphere_rossby_haurwitz.dslb";
+p = _dsl_ cli="lmweather";
+let pi = 3.141592653589793;
+let w = 0.000007848;
+let om = 0.00007292;
+let nu = (4.0 * 7.0 * w - 2.0 * om) / (5.0 * 6.0);
+wx.assert_close(nu, 0.00000246347, 0.0000000001);
+let s = wx.sphere(21).williamson6();
+let m0 = s.mean_height();
+let e0 = s.energy();
+let q0 = s.enstrophy();
+let c0 = s.wave_crest(4, 45.0);
+wx.assert_close(m0, 9523.0, 5.0);
+# 3 days at T21 with a 30 minute step: the crest of the m = 4 harmonic moves east. The barotropic non-divergent
+# formula gives 12.2 deg/day; with the free surface the shallow-water wave is about 7% slower (11.3 deg/day).
+s.run_dt(3.0 * 86400.0, 1800.0);
+let shift = s.wave_crest(4, 45.0) - c0;
+shift = shift - floor(shift / 90.0 + 0.5) * 90.0;            # modulo the 90 degree wavelength
+let want = nu * 3.0 * 86400.0 * 180.0 / pi;                  # degrees
+wx.print("crest moved " + str(shift) + " degrees in 3 days, barotropic prediction " + str(want));
+wx.assert_true(shift / want > 0.88 && shift / want < 0.98);
+# keep going to 7 days: conservation holds throughout
+s.run_dt(4.0 * 86400.0, 1800.0);
+wx.assert_close(s.mean_height(), m0, 0.000000001);
+wx.assert_close(s.energy() / e0, 1.0, 0.00001);
+wx.assert_close(s.enstrophy() / q0, 1.0, 0.0001);
+# the pattern is unchanged in shape: the wave-4 field vanishes at the pole, so the height there stays near 8000 m (within 10%)
+wx.assert_close(s.height_at(89.0, 0.0) / 8000.0, 1.0, 0.1);
+# higher resolution agrees: T42 for 4 days gives the same phase as T21 within a degree
+let a21 = wx.sphere(21).williamson6();
+let a42 = wx.sphere(42).williamson6();
+a21.run_dt(4.0 * 86400.0, 1800.0);
+a42.run_dt(4.0 * 86400.0, 900.0);
+let dc = a21.wave_crest(4, 45.0) - a42.wave_crest(4, 45.0);
+dc = dc - floor(dc / 90.0 + 0.5) * 90.0;                    # crests are defined modulo the wavelength
+wx.assert_close(dc, 0.0, 1.0);
+wx.assert_close(a21.height_at(45.0, 30.0), a42.height_at(45.0, 30.0), 15.0);
+end _dsl_
+savedsl(p, out);

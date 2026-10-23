@@ -1,0 +1,20 @@
+# Williamson test case 2 on the sphere: a steady geostrophic flow tilted 0.05 rad from the pole stays put for 5 days.
+out = ARGV.len() > 0 ? ARGV[0] : "build/williamson2.dslb";
+p = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let pi = 3.141592653589793;
+let s = wx.sphere(42).williamson2(pi / 2.0 - 0.05);
+wx.print("T42 grid " + str(s.nlon()) + " x " + str(s.nlat()) + ", stable dt " + str(s.stable_dt()) + " s, maximum wind " + str(s.max_wind()) + " m/s");
+let m0 = s.mean_height();
+let rows = "";
+for (d in range(0, 6)) {
+  rows = rows + str(d) + " " + str(s.error_l2()) + " " + str(s.error_linf()) + " " + str(s.energy()) + "\n";
+  s.run_dt(86400.0, 900.0);
+}
+wx.save_text("build/examples/williamson2_errors.csv", rows);
+wx.print("day, normalized l2 error, l-infinity error, energy:");
+wx.print(rows);
+wx.assert_true(s.error_l2() < 0.000001);
+wx.assert_close(s.mean_height(), m0, 0.000000001);
+s.save_csv("build/examples/williamson2_day5.csv");
+end _dsl_
+savedsl(p, out);

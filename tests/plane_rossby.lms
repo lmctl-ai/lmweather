@@ -1,0 +1,54 @@
+# Rossby waves on a beta-plane channel: westward phase speed c = -beta / (k^2 + l^2 + 1/Ld^2), a wave that
+# the height field and the winds carry together; no wave without beta.
+out = ARGV.len() > 0 ? ARGV[0] : "build/plane_rossby.dslb";
+p = _dsl_ cli="lmweather";
+let pi = 3.141592653589793;
+let lx = 4000000.0;
+let ly = 2000000.0;
+let f0 = 0.0001;
+let beta = 0.00000000002;
+let k = 2.0 * pi / lx;
+let l = pi / ly;
+let m = wx.plane(60, 30, lx, ly).depth(1000.0).coriolis(f0, beta).linear();
+let ld = m.rossby_radius();
+let cp = -beta / (k * k + l * l + 1.0 / (ld * ld));
+wx.assert_close(cp, -3.359, 0.002);
+# quasi-geostrophic wave: psi = psi0 cos(kx) sin(ly), u = -psi_y, v = psi_x, h = H + f0 psi / g
+let psi0 = 100000.0;
+m.fields("f0 * 100000.0 * cos(2 * pi * x / lx) * sin(pi * y / ly) / g", "-100000.0 * pi / ly * cos(2 * pi * x / lx) * cos(pi * y / ly)", "-100000.0 * 2 * pi / lx * sin(2 * pi * x / lx) * sin(pi * y / ly)");
+let c0 = m.zonal_crest(1, 15);
+let amp0 = m.zonal_amplitude(1, 15);
+let t = 20.0 * 86400.0;
+m.run(t);
+let shift = m.zonal_crest(1, 15) - c0;
+# the crest moves west by |cp| t = 5804 km = 1.45 wavelengths: compare modulo the wavelength
+let want = cp * t;
+let diff = shift - want;
+let wraps = floor(diff / lx + 0.5);
+wx.print("crest moved " + str(shift) + " m, expected " + str(want) + " m (mod " + str(lx) + ")");
+wx.assert_close(diff - wraps * lx, 0.0, 60000.0);
+# the amplitude of the wave is preserved (no dissipation in the linear scheme)
+wx.assert_close(m.zonal_amplitude(1, 15) / amp0, 1.0, 0.1);
+# without beta the same initial state does not drift westward at the Rossby speed: the crest hardly moves
+let f = wx.plane(60, 30, lx, ly).depth(1000.0).coriolis(f0, 0.0).linear();
+f.fields("f0 * 100000.0 * cos(2 * pi * x / lx) * sin(pi * y / ly) / g", "-100000.0 * pi / ly * cos(2 * pi * x / lx) * cos(pi * y / ly)", "-100000.0 * 2 * pi / lx * sin(2 * pi * x / lx) * sin(pi * y / ly)");
+let f_c0 = f.zonal_crest(1, 15);
+f.run(t);
+let moved = f.zonal_crest(1, 15) - f_c0;
+moved = moved - floor(moved / lx + 0.5) * lx;
+wx.assert_true(abs(moved) < 0.02 * lx);
+# stronger beta, faster wave: doubling beta doubles the westward speed
+let m2 = wx.plane(60, 30, lx, ly).depth(1000.0).coriolis(f0, 2.0 * beta).linear();
+m2.fields("f0 * 100000.0 * cos(2 * pi * x / lx) * sin(pi * y / ly) / g", "-100000.0 * pi / ly * cos(2 * pi * x / lx) * cos(pi * y / ly)", "-100000.0 * 2 * pi / lx * sin(2 * pi * x / lx) * sin(pi * y / ly)");
+let c2 = m2.zonal_crest(1, 15);
+m2.run(2.0 * 86400.0);
+let s2 = m2.zonal_crest(1, 15) - c2;
+s2 = s2 - floor(s2 / lx + 0.5) * lx;
+let s1 = wx.plane(60, 30, lx, ly).depth(1000.0).coriolis(f0, beta).linear().fields("f0 * 100000.0 * cos(2 * pi * x / lx) * sin(pi * y / ly) / g", "-100000.0 * pi / ly * cos(2 * pi * x / lx) * cos(pi * y / ly)", "-100000.0 * 2 * pi / lx * sin(2 * pi * x / lx) * sin(pi * y / ly)");
+let c1 = s1.zonal_crest(1, 15);
+s1.run(2.0 * 86400.0);
+let sh1 = s1.zonal_crest(1, 15) - c1;
+sh1 = sh1 - floor(sh1 / lx + 0.5) * lx;
+wx.assert_close(s2 / sh1, 2.0, 0.15);
+end _dsl_
+savedsl(p, out);
