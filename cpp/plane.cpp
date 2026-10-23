@@ -129,9 +129,10 @@ void Plane::tendency(const std::vector<double> &h, const std::vector<double> &u,
 }
 
 double Plane::stable_dt(double safety) const {
-  double hmax = 0, umax = 0;
-  for (double x : h_) hmax = std::max(hmax, x);
-  umax = max_speed();
+  // the linear equations carry waves at sqrt(g H) on the resting depth and have no advection: the winds that
+  // develop do not change their stability limit (the nonlinear limit shrinks with the fastest current and the deepest column)
+  double hmax = p_.linear ? p_.depth : 0, umax = p_.linear ? 0 : max_speed();
+  if (!p_.linear) for (double x : h_) hmax = std::max(hmax, x);
   if (!(hmax > 0)) throw std::runtime_error("the depth must be positive to step the model");
   double c = std::sqrt(p_.gravity * hmax) + umax;
   double inv = c * std::sqrt(1.0 / (dx() * dx()) + 1.0 / (dy() * dy()));
@@ -178,6 +179,11 @@ void Plane::run(double seconds, double dt) {
       for (double x : u_) s += x;
       for (double x : v_) s += x;
       if (!std::isfinite(s)) throw std::runtime_error("the integration blew up (not finite): use a smaller dt");
+      // the limit falls as the flow accelerates or the layer deepens: re-check it, an unstable RK4 run stays finite for long
+      const double now = stable_dt(std::sqrt(0.5));
+      if (!(hstep <= now))
+        throw std::runtime_error("run: dt = " + std::to_string(hstep) + " s exceeds the RK4 stability limit of about " + std::to_string(now) +
+                                 " s reached at t = " + std::to_string(t_) + " s (the flow accelerated): use a smaller dt");
     }
   }
 }

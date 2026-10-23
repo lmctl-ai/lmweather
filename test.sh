@@ -131,7 +131,9 @@ deep="$(printf '(%.0s' $(seq 300))1$(printf ')%.0s' $(seq 300))"
 expect_error deep_expression "let s = wx.sphere(10).fields(\"$deep\", \"0\", \"0\");" "nested too deeply"
 expect_error huge_number 'let s = wx.sphere(10).fields("1e400", "0", "0");' "out of range"
 expect_error nonfinite_result 'let s = wx.sphere(10).fields("0", "0", "0"); let e = s.error_l2();' "not finite"
-ok "errors stop with exit 3 and clear messages (30 cases)"
+# A step that was stable at the start of run_dt is re-checked every 64 steps: a deep low spins up winds that lower the limit.
+expect_error accelerated 'let s = wx.sphere(21).fields("5960.0 - 1500.0 * pow(2.718281828459045, -((lon - 3.0) * (lon - 3.0) * cos(lat) * cos(lat) + lat * lat) / 0.1)", "0", "0"); s.run_dt(5.0 * 86400.0, 0.97 * s.stable_dt() * 1.8856180831641);' "the flow accelerated"
+ok "errors stop with exit 3 and clear messages (31 cases)"
 
 # Memory budget: a runaway allocation loop stops with a run error (exit 3, message on stderr and in
 # the JSON line) instead of exhausting the machine. A small budget everywhere; on Linux also the

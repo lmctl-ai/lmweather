@@ -384,7 +384,15 @@ void Sphere::run(double seconds, double dt) {
   double h = seconds / static_cast<double>(n);
   for (int64_t i = 0; i < n; i++) {
     step(h);
-    if ((i & 63) == 63) check_finite();
+    if ((i & 63) == 63) {
+      check_finite();
+      // winds that grow during the run (adjustment, instability) lower the limit: a step that was fine at the start
+      // can be unstable now, and an unstable RK4 run returns wrong but finite numbers for a long time
+      const double now = stable_dt(2.0 * std::sqrt(2.0));
+      if (!(h <= now))
+        throw std::runtime_error("run: dt = " + std::to_string(h) + " s exceeds the RK4 stability limit of about " + std::to_string(now) +
+                                 " s reached at t = " + std::to_string(t_) + " s (the flow accelerated): use a smaller dt");
+    }
   }
   check_finite();
 }

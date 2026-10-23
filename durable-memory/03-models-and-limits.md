@@ -40,7 +40,9 @@ periodic in x, free slip (du/dy = 0) at the walls. Vector-invariant form:
 
 zeta lives at corners; the Coriolis/vorticity terms average the four surrounding velocities (Sadourny-type). `linear()` replaces
 h by the resting depth H in the fluxes and drops zeta and K (the equations linearized about rest). Second-order in space,
-RK4 in time; `stable_dt()` = safety * 2 / (c sqrt(1/dx^2 + 1/dy^2) + ...), safety 0.5.
+RK4 in time; `stable_dt()` = safety * 2 / (c sqrt(1/dx^2 + 1/dy^2) + ...), safety 0.5, with c = sqrt(g h_max) + |v|_max
+(nonlinear) or sqrt(g H) (linear: no advection, so the winds that develop do not limit the step). Both models re-check the
+limit every 64 steps during `run`/`run_dt` and stop if the flow has accelerated past it.
 
 - Discrete conservation: mass exactly; in the linear case the potential vorticity anomaly zeta - f0 (h - H)/H is conserved at every
   interior corner (with h averaged over the four cells around it) by the discrete equations (`pv_anomaly_rms`); energy

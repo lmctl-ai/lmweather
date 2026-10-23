@@ -20,6 +20,8 @@ south-west corner. CSV outputs are space separated, `%.10g`, rows grouped by lat
 
 Errors: `run_dt` with a step above the RK4 limit for the present state (sphere 2 sqrt(2) / omega_max, plane `stable_dt` with
 safety sqrt(2)/2) stops with "exceeds the RK4 stability limit" before stepping, because an unstable RK4 run gives wrong but
-finite numbers for many steps; a diverging integration (checked over all coefficients/fields every 64 steps and at the end)
+finite numbers for many steps; the limit is re-checked every 64 steps against the present winds and depth, and a flow that
+accelerates past it (a deep low adjusting) stops with "... (the flow accelerated)"; the linear plane ignores the winds, its
+limit is set by sqrt(g H) alone; a diverging integration (checked over all coefficients/fields every 64 steps and at the end)
 stops with "blew up (not finite): use a smaller dt"; out-of-range or non-finite arguments name the argument (int arguments
 are range-checked before narrowing, so 2^32 + 2 is not taken as 2).
