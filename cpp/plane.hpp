@@ -50,6 +50,7 @@ class Plane {
   double u_at(double x, double y) const;
   double v_at(double x, double y) const;
   double zonal_amplitude(int m, int j) const;      // amplitude of the m-th zonal harmonic of h on row j (2|c_m|)
+  double harmonic_energy(int m) const;             // kinetic energy per unit mass in zonal harmonic m, mean over the channel: sum over m >= 1 plus the zonal-mean part is mean(|v|^2/2)
   double zonal_crest(int m, int j) const;          // longitude x (m) of a crest of that harmonic, in [0, lx/m)
   double v_zonal_crest(int m, int j) const;        // same for v (row j in 1..ny-1 on v points)
   double zeta_at_corner(int i, int j) const;

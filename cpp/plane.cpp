@@ -283,6 +283,21 @@ double Plane::zonal_crest(int m, int j) const {
   x = std::fmod(x, per);
   return x < 0 ? x + per : x;
 }
+double Plane::harmonic_energy(int m) const {
+  // mean over x of u^2/2 for u = sum_m 2|c_m| cos(k_m x + ph) is sum_m |c_m|^2 (m >= 1); average the rows of u and v
+  if (m < 1 || m >= p_.nx / 2) throw std::invalid_argument("zonal harmonic out of range");
+  std::vector<double> row(p_.nx);
+  double s = 0;
+  for (int j = 0; j < p_.ny; j++) {
+    for (int i = 0; i < p_.nx; i++) row[i] = u(i, j);
+    s += std::norm(harmonic(p_.nx, m, row, 0.0));
+  }
+  for (int j = 1; j < p_.ny; j++) {
+    for (int i = 0; i < p_.nx; i++) row[i] = v(i, j);
+    s += std::norm(harmonic(p_.nx, m, row, 0.5));
+  }
+  return s / p_.ny;
+}
 double Plane::v_zonal_crest(int m, int j) const {
   if (m < 1 || m >= p_.nx / 2 || j < 1 || j >= p_.ny) throw std::invalid_argument("zonal harmonic or v row out of range");
   std::vector<double> row(p_.nx);

@@ -11,7 +11,10 @@ take radians; expressions use radians. Builder methods return the receiver. Sett
 height (use after `fields`). Expression constants: sphere `a, omega, g, pi, e`; plane `lx, ly, H, g, f0, beta, pi, e`
 (`H` is the depth set before `fields`; the `h` expression of `Plane.fields` is the *anomaly* added to H). The DSL has no
 exponent literals (`1e-5` is invalid): write `0.00001`; it has no `exp`/`log` either: `pow(2.718281828459045, x)`.
-`wave_crest(m, lat)` and `Plane.zonal_crest` return a crest of the m-th zonal harmonic modulo its wavelength.
+`wave_crest(m, lat)` and `Plane.zonal_crest` return a crest of the m-th zonal harmonic modulo its wavelength;
+`Plane.harmonic_energy(m)` is the kinetic energy per unit mass in zonal harmonic m averaged over the channel (the sum
+over m >= 1 plus the zonal-mean part is the mean of |v|^2/2): the growth of a single unstable wave without the phase
+noise of one row's height amplitude.
 
 Orography (sphere only): `orography(expr)` sets the surface height hs (m) from an expression in `lon, lat`, any time (it
 forces the next steps); `height_at` and the CSV `h` column stay the fluid thickness, the free surface is h + hs (CSV column 8).

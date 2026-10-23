@@ -1,0 +1,29 @@
+# Kinetic energy by zonal harmonic: a wave u = U cos(k x) carries U^2/4 of mean kinetic energy per unit mass in harmonic 1
+# and nothing elsewhere; v = V sin(2 k x) adds V^2/4 to harmonic 2; the sum over harmonics is the mean of |v|^2/2 for a
+# field without zonal mean. Under an instability the energy of one harmonic grows at twice the amplitude growth rate.
+out = ARGV.len() > 0 ? ARGV[0] : "build/plane_harmonic.dslb";
+p = _dsl_ cli="lmweather";
+let w = wx.plane(64, 16, 1000000.0, 250000.0).depth(100.0).linear();
+w.fields("0", "3.0 * cos(2 * pi * x / lx)", "0");
+wx.assert_close(w.harmonic_energy(1), 9.0 / 4.0, 0.000000001);
+wx.assert_close(w.harmonic_energy(2), 0.0, 0.000000001);
+wx.assert_close(w.harmonic_energy(7), 0.0, 0.000000001);
+let z = wx.plane(64, 16, 1000000.0, 250000.0).depth(100.0).linear();
+z.fields("0", "3.0 * cos(2 * pi * x / lx)", "4.0 * sin(4 * pi * x / lx) * sin(pi * y / ly)");
+# v lives on 15 interior faces of 16 rows: the mean of sin^2(pi y / ly) over those faces, times V^2/4
+let sum = 0.0;
+for (j in range(1, 16)) {
+  let sv = sin(3.141592653589793 * float(j) / 16.0);
+  sum = sum + sv * sv;
+}
+wx.assert_close(z.harmonic_energy(2), 16.0 / 4.0 * sum / 16.0, 0.000000001);
+wx.assert_close(z.harmonic_energy(1), 9.0 / 4.0, 0.000000001);
+# a standing gravity wave h = a cos(kx) at rest swings into u = (c a / H) sin(kx) a quarter period later
+let g = wx.plane(200, 8, 2000000.0, 40000.0).depth(100.0).linear();
+g.fields("cos(2 * pi * x / lx)", "0", "0");
+wx.assert_close(g.harmonic_energy(1), 0.0, 0.000000001);
+let c = g.wave_speed();
+g.run(0.5 * 3.141592653589793 / (c * 2.0 * 3.141592653589793 / 2000000.0));
+wx.assert_close(g.harmonic_energy(1), (c / 100.0) * (c / 100.0) / 4.0, 0.001);
+end _dsl_
+savedsl(p, out);

@@ -587,6 +587,14 @@
             "returns": "float"
           }
         ],
+        "harmonic_energy": [
+          {
+            "params": [
+              "int"
+            ],
+            "returns": "float"
+          }
+        ],
         "v_zonal_crest": [
           {
             "params": [

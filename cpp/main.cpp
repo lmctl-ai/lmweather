@@ -458,6 +458,7 @@ void register_host(dslvm::Registry &r, Host &h) {
   method(r, "Plane", "v_at", {"float", "float"}, "float", [P, inside](void *p, Args &a) { inside(p, a[0].f, a[1].f, "Plane.v_at"); return Value::real(P(p).model->v_at(a[0].f, a[1].f)); });
   method(r, "Plane", "zonal_amplitude", {"int", "int"}, "float", [P](void *p, Args &a) { return Value::real(P(p).model->zonal_amplitude(narrow(a[0].i, "Plane.zonal_amplitude"), narrow(a[1].i, "Plane.zonal_amplitude"))); });
   method(r, "Plane", "zonal_crest", {"int", "int"}, "float", [P](void *p, Args &a) { return Value::real(P(p).model->zonal_crest(narrow(a[0].i, "Plane.zonal_crest"), narrow(a[1].i, "Plane.zonal_crest"))); });
+  method(r, "Plane", "harmonic_energy", {"int"}, "float", [P](void *p, Args &a) { return Value::real(P(p).model->harmonic_energy(narrow(a[0].i, "Plane.harmonic_energy"))); });
   method(r, "Plane", "v_zonal_crest", {"int", "int"}, "float", [P](void *p, Args &a) { return Value::real(P(p).model->v_zonal_crest(narrow(a[0].i, "Plane.v_zonal_crest"), narrow(a[1].i, "Plane.v_zonal_crest"))); });
   method(r, "Plane", "save_csv", {"string"}, "void", [P](void *p, Args &a) {
     Plane &m = *P(p).model;
