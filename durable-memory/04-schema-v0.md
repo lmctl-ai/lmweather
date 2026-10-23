@@ -27,7 +27,8 @@ Every tracer diagnostic without a tracer is an error ("no tracer").
 south-west corner. CSV outputs are space separated, `%.10g`, rows grouped by latitude/y with blank lines between rows
 (gnuplot `splot ... with pm3d` with `set pm3d map`): sphere `lon lat h u v zeta q hs` (q = 0 without a tracer, hs = 0 without orography), plane
 `x y h u v zeta` (u, v at centers).
-`save_zonal_mean`: `lat h_mean u_mean`; `save_row/column`: `x h` / `y h`.
+`save_zonal_mean`: `lat h_mean u_mean`; `save_row/column`: `x h` / `y h`; `save_spectrum`: `n ke pe` for n = 1..T
+(kinetic per unit depth m2/s2, potential m3/s2). `kinetic_energy()` + `potential_energy()` = `energy()`.
 
 Errors: `run_dt` with a step above the RK4 limit for the present state (sphere 2 sqrt(2) / omega_max, plane `stable_dt` with
 safety sqrt(2)/2) stops with "exceeds the RK4 stability limit" before stepping, because an unstable RK4 run gives wrong but

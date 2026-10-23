@@ -24,7 +24,11 @@ E = (U^2 + V^2) / (2 (1 - mu^2)), D(A, B) = (1/(a (1-mu^2))) dA/dlon + (1/a) dB/
   Williamson's test cases 2 and 3: the flow is rotated *together with f*; forgetting this makes TC2 unsteady (the test
   suite shows the wrong-f case drifting by >1e-3 in a day).
 - Exact invariants: the (0,0) coefficient of Phi has zero tendency, so `mean_height` is conserved to rounding (1e-12).
-  Energy `energy()` = area mean of h|v|^2/2 + g h^2/2; potential enstrophy = mean of eta^2/(2h).
+  Energy `energy()` = `kinetic_energy()` (area mean of h|v|^2/2) + `potential_energy()` (g h^2/2 + g h hs); potential
+  enstrophy = mean of eta^2/(2h). `save_spectrum` writes, per total wavenumber n, the kinetic energy per unit depth carried
+  by degree n (mean of |v|^2/2 = 1/2 sum c_m |F|^2 with the orthonormal basis: 1/4 sum_m c_m a^2 (|zeta|^2 + |delta|^2) /
+  (n(n+1)), c_0 = 1, c_m = 2; the stream-function and velocity-potential parts are orthogonal) and the potential energy
+  g/4 sum_m c_m |h_nm|^2 (m3/s2). Parseval holds to rounding on a uniform layer.
 - Diagnostics at a point (`height_at`, `u_at`, ...) synthesize the spectral series exactly (no interpolation).
 - Orography (`orography(expr)`, surface height hs in m on the grid): h stays the fluid thickness, the Bernoulli function
   becomes g (h + hs) + E (the mountain enters the divergence equation only), the energy adds g h hs. A resting fluid with a

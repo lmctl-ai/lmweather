@@ -36,6 +36,10 @@ Every test asserts a closed form, an exact property or a published test-case beh
   (24 m/s). TC5 at T42, 900 s steps, 15 days: mass exact, energy within 4e-8 (asserted 1e-6), potential enstrophy within 5e-7
   (asserted 1e-5), winds grow from 20 to 42 m/s, a lee-side vorticity anomaly of 3.5e-5 /s at 300 E 30 N with the upstream
   side unchanged; T21 gives the same global height change (l2 0.0160 vs 0.0160 against day 0).
+- **Energy spectra** (`tests/sphere_spectrum.lms`): solid-body rotation u0 cos(lat) on a uniform layer has mean |v|^2/2 =
+  u0^2/3 (kinetic_energy / H to 1e-7); the kinetic spectrum sums to it (Parseval); a single Y_4^0 of 10 m carries g/4 * 10^2
+  of potential energy in degree 4 alone; energy = kinetic + potential; decaying turbulence (random height to n = 20 at T42
+  under 5e14 m4/s hyperdiffusion) loses kinetic energy between day 1 and day 5 with the mean height exact.
 - **Geostrophic adjustment** (`tests/plane_adjustment.lms`, `examples/geostrophic_adjustment.lms`, `tests/sphere_adjustment.lms`):
   channel with f0 = 1e-4, H = 1000 m (Ld = 990.5 km), Gaussian bump width ~400 km varying in y; the time mean over 10 inertial
   periods equals the potential-vorticity prediction h_n = h0_n/(1 + (n pi Ld/Ly)^2) in cosine modes, center 0.3018 m vs 0.3024 m

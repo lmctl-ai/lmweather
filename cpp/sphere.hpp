@@ -69,7 +69,12 @@ class Sphere {
 
   // diagnostics (area means unless stated)
   double mean_height() const;            // exactly conserved
-  double energy() const;                 // J/m2: mean of h|v|^2/2 + g h^2/2 (times rho = 1)
+  double energy() const;                 // J/m2: mean of h|v|^2/2 + g h^2/2 + g h hs (times rho = 1) = kinetic + potential
+  double kinetic_energy() const;         // mean of h|v|^2/2
+  double potential_energy() const;       // mean of g h^2/2 + g h hs
+  // Spectra by total wavenumber n = 1..T: ke[n] = mean of |v|^2/2 per unit depth (m2/s2) carried by degree n
+  // (Parseval: their sum is the area mean of |v|^2/2), pe[n] = g/2 times the variance of h in degree n (m3/s2)
+  void spectrum(std::vector<double> &ke, std::vector<double> &pe) const;
   double potential_enstrophy() const;
   double max_wind() const;
   double height_error_l2() const;        // Williamson normalized l2 error against the reference height

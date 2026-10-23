@@ -322,6 +322,16 @@ void register_host(dslvm::Registry &r, Host &h) {
   method(r, "Sphere", "nlon", {}, "int", [S](void *p, Args &) { return Value::integer(S(p).nlon()); });
   method(r, "Sphere", "mean_height", {}, "float", [S](void *p, Args &) { return Value::real(S(p).mean_height()); });
   method(r, "Sphere", "energy", {}, "float", [S](void *p, Args &) { return Value::real(S(p).energy()); });
+  method(r, "Sphere", "kinetic_energy", {}, "float", [S](void *p, Args &) { return Value::real(S(p).kinetic_energy()); });
+  method(r, "Sphere", "potential_energy", {}, "float", [S](void *p, Args &) { return Value::real(S(p).potential_energy()); });
+  method(r, "Sphere", "save_spectrum", {"string"}, "void", [S](void *p, Args &a) {
+    std::vector<double> ke, pe;
+    S(p).spectrum(ke, pe);
+    std::string t;
+    for (size_t n = 1; n < ke.size(); n++) t += std::to_string(n) + " " + g(ke[n]) + " " + g(pe[n]) + "\n";
+    save(a[0].s, t, "Sphere.save_spectrum");
+    return Value::none();
+  });
   method(r, "Sphere", "enstrophy", {}, "float", [S](void *p, Args &) { return Value::real(S(p).potential_enstrophy()); });
   method(r, "Sphere", "max_wind", {}, "float", [S](void *p, Args &) { return Value::real(S(p).max_wind()); });
   method(r, "Sphere", "error_l2", {}, "float", [S](void *p, Args &) { return Value::real(S(p).height_error_l2()); });

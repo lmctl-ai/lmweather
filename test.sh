@@ -89,7 +89,12 @@ ok "all $(wc -l <"$WORK/after.txt" | tr -d ' ') result files are byte-identical 
 [ "$(awk 'NF' build/determinism_sphere.csv | awk '{print NF}' | sort -u)" = 8 ] || fail "sphere CSV does not have 8 columns"
 [ "$(awk 'NF' build/determinism_plane.csv | awk '{print NF}' | sort -u)" = 6 ] || fail "plane CSV does not have 6 columns"
 [ "$(awk 'NF' build/determinism_sphere.csv | wc -l | tr -d ' ')" = 2048 ] || fail "T21 sphere CSV should have 64 x 32 rows"
-ok "CSV layouts: sphere 8 columns (64 x 32 at T21), plane 6 columns"
+# spectrum files: one line per total wavenumber 1..T with "n ke pe"; Parseval: the kinetic spectrum of a uniform 2000 m layer
+# sums to kinetic_energy / H (the test asserts the energies, this checks the file)
+[ "$(awk 'NF' build/spectrum_winds.csv | wc -l | tr -d ' ')" = 21 ] || fail "T21 spectrum should have 21 lines"
+[ "$(awk '{print NF}' build/spectrum_winds.csv | sort -u)" = 3 ] || fail "spectrum lines should have 3 columns"
+awk '{s += $2} END { if (s < 75.0 - 0.000001 || s > 75.0 + 0.000001) { print "kinetic spectrum sums to " s ", expected 75 = 15^2/3"; exit 1 } }' build/spectrum_solid.csv || fail "Parseval: the kinetic spectrum of solid-body rotation does not sum to u0^2/3"
+ok "CSV layouts: sphere 8 columns (64 x 32 at T21), plane 6 columns, spectrum n ke pe"
 
 # Error paths: each snippet must fail the run with exit 3 and a message naming the problem.
 expect_error() { # name, snippet, expected message fragment

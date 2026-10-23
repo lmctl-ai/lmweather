@@ -509,18 +509,45 @@ std::vector<double> Sphere::grid_v() const {
 
 double Sphere::mean_height() const { return phi_[idx(0, 0)].real() / std::sqrt(2.0) / p_.gravity; }
 
-double Sphere::energy() const {
+double Sphere::energy() const { return kinetic_energy() + potential_energy(); }
+
+double Sphere::kinetic_energy() const {
   std::vector<double> h = grid_height(), u = grid_u(), v = grid_v();
   double s = 0;
   for (int j = 0; j < nlat_; j++) {
     double row = 0;
-    for (int k = 0; k < nlon_; k++) {
-      size_t i = static_cast<size_t>(j) * nlon_ + k;
-      row += 0.5 * h[i] * (u[i] * u[i] + v[i] * v[i]) + 0.5 * p_.gravity * h[i] * h[i] + p_.gravity * h[i] * hs_grid_[i];
-    }
+    for (int k = 0; k < nlon_; k++) { size_t i = static_cast<size_t>(j) * nlon_ + k; row += 0.5 * h[i] * (u[i] * u[i] + v[i] * v[i]); }
     s += w_[j] * row / nlon_;
   }
   return 0.5 * s;
+}
+
+double Sphere::potential_energy() const {
+  std::vector<double> h = grid_height();
+  double s = 0;
+  for (int j = 0; j < nlat_; j++) {
+    double row = 0;
+    for (int k = 0; k < nlon_; k++) { size_t i = static_cast<size_t>(j) * nlon_ + k; row += 0.5 * p_.gravity * h[i] * h[i] + p_.gravity * h[i] * hs_grid_[i]; }
+    s += w_[j] * row / nlon_;
+  }
+  return 0.5 * s;
+}
+
+void Sphere::spectrum(std::vector<double> &ke, std::vector<double> &pe) const {
+  // area mean of f^2 = 1/2 sum_{n,m} c_m |F_nm|^2 (c_0 = 1, c_m = 2) for the orthonormal P_n^m and the Fourier
+  // normalization used here; |v|^2 integrates to sum a^2 (|zeta|^2 + |delta|^2) / (n (n + 1)) (the stream function and
+  // velocity potential parts are orthogonal)
+  ke.assign(N_ + 1, 0.0);
+  pe.assign(N_ + 1, 0.0);
+  const double a2 = p_.radius * p_.radius, g2 = p_.gravity * p_.gravity;
+  for (int m = 0; m <= N_; m++) {
+    double cm = m == 0 ? 1.0 : 2.0;
+    for (int n = std::max(m, 1); n <= N_; n++) {
+      size_t q = idx(m, n);
+      ke[n] += 0.25 * cm * a2 * (std::norm(zeta_[q]) + std::norm(delta_[q])) / (n * (n + 1.0));
+      pe[n] += 0.25 * cm * p_.gravity * std::norm(phi_[q]) / g2;
+    }
+  }
 }
 
 double Sphere::potential_enstrophy() const {

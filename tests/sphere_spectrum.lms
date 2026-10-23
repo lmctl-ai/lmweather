@@ -1,0 +1,37 @@
+# Energy spectra by total wavenumber n. Parseval: the kinetic spectrum sums to the area mean of |v|^2/2, so on a layer
+# of uniform depth H it equals kinetic_energy() / H to rounding; a single spherical harmonic puts all its potential energy
+# in one degree; energy = kinetic + potential; decaying turbulence under hyperdiffusion loses kinetic energy at high n.
+out = ARGV.len() > 0 ? ARGV[0] : "build/sphere_spectrum.dslb";
+p = _dsl_ cli="lmweather";
+let pi = 3.141592653589793;
+let g = 9.80616;
+# solid-body rotation plus a wave-3 meridional wind on a uniform 2000 m layer: mean of |v|^2/2 against the spectrum
+let s = wx.sphere(21).fields("2000.0", "15.0 * cos(lat)", "6.0 * cos(3.0 * lon) * cos(lat) * cos(lat)");
+s.save_spectrum("build/spectrum_winds.csv");
+wx.assert_close(s.energy(), s.kinetic_energy() + s.potential_energy(), 0.000001 * s.energy());
+wx.assert_close(s.potential_energy(), 0.5 * g * 2000.0 * 2000.0, 0.000001);
+# solid-body rotation alone: mean of u^2/2 = u0^2/2 * mean(cos^2 lat) = u0^2/3
+let r = wx.sphere(21).fields("2000.0", "15.0 * cos(lat)", "0");
+r.save_spectrum("build/spectrum_solid.csv");                 # test.sh sums its ke column: 75 = 15^2/3 (Parseval)
+wx.assert_close(r.kinetic_energy() / 2000.0, 15.0 * 15.0 / 3.0, 0.0000001);
+wx.assert_true(r.kinetic_energy() < s.kinetic_energy());
+# a single harmonic Y_4^0 of 10 m on 1000 m: potential energy g/2 * amplitude^2 (the P_n^0 are orthonormal) in degree 4
+let m = wx.sphere(21).mode(4, 0, 10.0, 1000.0);
+m.save_spectrum("build/spectrum_mode.csv");
+wx.assert_close(m.potential_energy(), 0.5 * g * 1000.0 * 1000.0 + 0.25 * g * 100.0, 0.0001);
+wx.assert_close(m.kinetic_energy(), 0.0, 0.0);
+# decaying turbulence: random height field, wavenumbers up to 20, with hyperdiffusion. The adjusting height field keeps
+# feeding kinetic energy (it rises from day 1 to day 5) while the hyperdiffusion drains the total energy.
+let t = wx.sphere(42).fields("4000.0", "0", "0").perturb(80.0, 11, 20).diffusion(500000000000000.0);
+t.run_dt(86400.0, 900.0);
+let k1 = t.kinetic_energy();
+let e1 = t.energy();
+t.save_spectrum("build/spectrum_day1.csv");
+t.run_dt(4.0 * 86400.0, 900.0);
+t.save_spectrum("build/spectrum_day5.csv");
+wx.print("decaying turbulence: kinetic energy day 1 " + str(k1) + " day 5 " + str(t.kinetic_energy()) + " J/m2; total " + str(e1) + " -> " + str(t.energy()));
+wx.assert_true(t.energy() < e1);
+wx.assert_true(t.kinetic_energy() > 0.5 * k1);
+wx.assert_close(t.mean_height(), 4000.0, 0.000000001);
+end _dsl_
+savedsl(p, out);

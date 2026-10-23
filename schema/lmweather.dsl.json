@@ -286,6 +286,26 @@
             "returns": "float"
           }
         ],
+        "kinetic_energy": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "potential_energy": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "save_spectrum": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "void"
+          }
+        ],
         "enstrophy": [
           {
             "params": [],
