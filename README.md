@@ -2,6 +2,10 @@
 
 **Idealized weather and climate dynamics for lmscript in one static executable: rotating shallow water on the sphere (spectral transform method, Williamson test cases) and on a beta-plane (C-grid finite differences).**
 
+[![CI](https://github.com/lmctl-ai/lmweather/actions/workflows/ci.yml/badge.svg)](https://github.com/lmctl-ai/lmweather/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/lmctl-ai/lmweather?label=release)](https://github.com/lmctl-ai/lmweather/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Twenty worked problems with known answers, each made by one runnable file. Every command below runs from any empty
 directory: lmweather integrates, [lmplot](https://github.com/lmctl-ai/lmplot) draws, the picture lands in `images/`.
 
@@ -35,9 +39,6 @@ on first use; binaries already on `PATH` take priority. From a checkout, `exampl
 
 It is a scripting host, not a command-line tool: write an [lmscript](https://lmctl.com/tools/lmscript/skill.html) `_dsl_` block,
 compile it, run it with `lmweather --dsl`. No Fortran, no NetCDF, no MPI, no data files, no shared libraries. (It is not WRF; see *Scope*.)
-
-[![CI](https://github.com/lmctl-ai/lmweather/actions/workflows/ci.yml/badge.svg)](https://github.com/lmctl-ai/lmweather/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ```
 # rh.lms: the Rossby-Haurwitz wave (Williamson test case 6) drifts east; mass and energy are conserved
