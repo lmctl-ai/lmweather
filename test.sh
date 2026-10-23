@@ -106,7 +106,12 @@ expect_error unknown_name 'let s = wx.sphere(10).fields("foo", "0", "0");' "unkn
 expect_error mode_range 'let s = wx.sphere(10).mode(40, 0, 1.0, 100.0);' "truncation"
 expect_error bad_wave 'let s = wx.sphere(10).fields("1000", "0", "0").perturb(1.0, 1, 0);' "max_wave"
 expect_error zero_height 'let s = wx.sphere(10).fields("0", "0", "0"); let t = s.stable_dt();' "must be positive"
-expect_error blow_up 'let p = wx.plane(20, 10, 1000000.0, 500000.0).depth(100.0).fields("cos(x / 100000.0)", "0", "0"); p.run_dt(5000000.0, 50000.0);' "blew up"
+expect_error unstable_dt 'let p = wx.plane(20, 10, 1000000.0, 500000.0).depth(100.0).fields("cos(x / 100000.0)", "0", "0"); p.run_dt(5000000.0, 50000.0);' "stability limit"
+expect_error unstable_sphere_dt 'let s = wx.sphere(21).williamson2(0.0); s.run_dt(86400.0, 86400.0);' "stability limit"
+expect_error blow_up 'let p = wx.plane(20, 10, 1000000.0, 500000.0).depth(100.0).fields("-150.0 * cos(2.0 * pi * x / lx)", "0", "0"); p.run(50000000.0);' "blew up"
+expect_error nan_longitude 'let s = wx.sphere(10).fields("1000", "0", "0"); let h = s.height_at(10.0, sqrt(-1.0));' "longitude"
+expect_error wrapped_int 'let s = wx.sphere(10).mode(4294967298, 0, 1.0, 100.0);' "out of range"
+expect_error infinite_depth 'let p = wx.plane(10, 10, 1000000.0, 500000.0).depth(pow(10.0, 400.0));' "depth"
 expect_error depth_late 'let p = wx.plane(10, 10, 1000000.0, 500000.0).perturb(1.0, 1).depth(100.0);' "before fields"
 expect_error negative_depth 'let p = wx.plane(10, 10, 1000000.0, 500000.0).depth(-5.0);' "depth"
 expect_error negative_viscosity 'let p = wx.plane(10, 10, 1000000.0, 500000.0).viscosity(-1.0);' "viscosity"
@@ -119,7 +124,7 @@ expect_error no_rossby_radius 'let p = wx.plane(10, 10, 1000000.0, 500000.0); le
 expect_error unwritable 'wx.save_text("/nonexistent-dir/x.csv", "x");' "cannot write"
 expect_error assertfail 'wx.assert_close(1.0, 2.0, 0.1);' "assert_close failed"
 expect_error assert_true 'wx.assert_true(false);' "assert_true failed"
-ok "errors stop with exit 3 and clear messages (22 cases)"
+ok "errors stop with exit 3 and clear messages (27 cases)"
 
 # Combined pipelines (lmweather simulates, lmplot draws). Need lmplot on PATH, or network for install=.
 if command -v lmplot >/dev/null 2>&1 || [ "${LMWEATHER_TEST_NETWORK:-}" = 1 ]; then

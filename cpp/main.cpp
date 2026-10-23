@@ -81,8 +81,13 @@ void save(const std::string &path, const std::string &text, const char *who) {
   std::ofstream f(path, std::ios::binary);
   if (!f) throw dslvm::Error(std::string(who) + ": cannot write " + path);
   f << text;
+  f.flush();
+  if (!f) throw dslvm::Error(std::string(who) + ": cannot write " + path);
 }
 double finite(double x, const char *what) { need(std::isfinite(x), std::string(what) + " must be a finite number"); return x; }
+// an int argument that is cast to int: reject values a cast would wrap instead of silently using another number
+int narrow(int64_t v, const char *who) { need(v >= -1000000000 && v <= 1000000000, std::string(who) + ": integer argument out of range"); return static_cast<int>(v); }
+double positive(double x, const std::string &msg) { need(std::isfinite(x) && x > 0, msg); return x; }
 double latitude(double deg, const char *who) { need(std::fabs(deg) <= 90.0, std::string(who) + ": latitude must be within +-90 degrees"); return deg * kDeg; }
 
 lmnum::Expr compile(const std::string &text, const std::vector<std::string> &vars, const std::map<std::string, double> &params) {
@@ -99,7 +104,7 @@ void register_host(dslvm::Registry &r, Host &h) {
   // ---------------------------------------------------------------- Wx
   auto make_sphere = [&h](int64_t n, SphereParams sp) {
     need(n >= 4 && n <= 170, "Wx.sphere: truncation must be between 4 and 170");
-    need(sp.radius > 0 && sp.gravity > 0 && sp.omega >= 0, "Wx.planet: radius and gravity must be positive and omega not negative");
+    need(std::isfinite(sp.radius) && std::isfinite(sp.gravity) && std::isfinite(sp.omega) && sp.radius > 0 && sp.gravity > 0 && sp.omega >= 0, "Wx.planet: radius and gravity must be positive and omega not negative");
     auto o = std::make_unique<SphereObj>();
     o->params = sp;
     o->model = std::make_unique<Sphere>(static_cast<int>(n), sp);
@@ -113,7 +118,7 @@ void register_host(dslvm::Registry &r, Host &h) {
   });
   method(r, "Wx", "plane", {"int", "int", "float", "float"}, "Plane", [&h](void *, Args &a) {
     need(a[0].i >= 4 && a[1].i >= 4 && a[0].i <= 4000 && a[1].i <= 4000 && a[0].i * a[1].i <= 8000000, "Wx.plane: need 4..4000 cells each way and at most 8 million cells");
-    need(a[2].f > 0 && a[3].f > 0, "Wx.plane: domain sizes must be positive (m)");
+    need(std::isfinite(a[2].f) && std::isfinite(a[3].f) && a[2].f > 0 && a[3].f > 0, "Wx.plane: domain sizes must be positive (m)");
     auto o = std::make_unique<PlaneObj>();
     o->params.nx = static_cast<int>(a[0].i); o->params.ny = static_cast<int>(a[1].i);
     o->params.lx = a[2].f; o->params.ly = a[3].f;
@@ -140,7 +145,7 @@ void register_host(dslvm::Registry &r, Host &h) {
     return Value::object("Sphere", p);
   });
   method(r, "Sphere", "diffusion", {"float"}, "Sphere", [S](void *p, Args &a) {
-    need(a[0].f >= 0, "Sphere.diffusion: coefficient must not be negative");
+    need(std::isfinite(a[0].f) && a[0].f >= 0, "Sphere.diffusion: coefficient must be finite and not negative");
     S(p).set_diffusion(a[0].f);
     return Value::object("Sphere", p);
   });
@@ -202,19 +207,19 @@ void register_host(dslvm::Registry &r, Host &h) {
     return Value::object("Sphere", p);
   });
   method(r, "Sphere", "mode", {"int", "int", "float", "float"}, "Sphere", [S](void *p, Args &a) {
-    need(a[3].f > 0, "Sphere.mode: mean depth must be positive");
-    S(p).add_mode(static_cast<int>(a[0].i), static_cast<int>(a[1].i), finite(a[2].f, "amplitude"), a[3].f);
+    positive(a[3].f, "Sphere.mode: mean depth must be positive");
+    S(p).add_mode(narrow(a[0].i, "Sphere.mode"), narrow(a[1].i, "Sphere.mode"), finite(a[2].f, "amplitude"), a[3].f);
     return Value::object("Sphere", p);
   });
   method(r, "Sphere", "perturb", {"float", "int", "int"}, "Sphere", [S](void *p, Args &a) {
     need(a[1].i >= 0, "Sphere.perturb: seed must not be negative");
-    S(p).perturb(finite(a[0].f, "amplitude"), static_cast<uint64_t>(a[1].i), static_cast<int>(a[2].i));
+    S(p).perturb(finite(a[0].f, "amplitude"), static_cast<uint64_t>(a[1].i), narrow(a[2].i, "Sphere.perturb"));
     return Value::object("Sphere", p);
   });
   method(r, "Sphere", "mark_reference", {}, "Sphere", [S](void *p, Args &) { S(p).mark_reference(); return Value::object("Sphere", p); });
   method(r, "Sphere", "run", {"float"}, "Sphere", [S](void *p, Args &a) { S(p).run(finite(a[0].f, "seconds"), 0); return Value::object("Sphere", p); });
   method(r, "Sphere", "run_dt", {"float", "float"}, "Sphere", [S](void *p, Args &a) {
-    need(a[1].f > 0, "Sphere.run_dt: dt must be positive");
+    positive(a[1].f, "Sphere.run_dt: dt must be positive");
     S(p).run(finite(a[0].f, "seconds"), a[1].f);
     return Value::object("Sphere", p);
   });
@@ -229,22 +234,22 @@ void register_host(dslvm::Registry &r, Host &h) {
   method(r, "Sphere", "max_wind", {}, "float", [S](void *p, Args &) { return Value::real(S(p).max_wind()); });
   method(r, "Sphere", "error_l2", {}, "float", [S](void *p, Args &) { return Value::real(S(p).height_error_l2()); });
   method(r, "Sphere", "error_linf", {}, "float", [S](void *p, Args &) { return Value::real(S(p).height_error_linf()); });
-  method(r, "Sphere", "height_at", {"float", "float"}, "float", [S](void *p, Args &a) { return Value::real(S(p).height_at(latitude(a[0].f, "Sphere.height_at"), a[1].f * kDeg)); });
+  method(r, "Sphere", "height_at", {"float", "float"}, "float", [S](void *p, Args &a) { return Value::real(S(p).height_at(latitude(a[0].f, "Sphere.height_at"), finite(a[1].f, "Sphere.height_at: longitude") * kDeg)); });
   method(r, "Sphere", "u_at", {"float", "float"}, "float", [S](void *p, Args &a) {
     need(std::fabs(a[0].f) < 90.0, "Sphere.u_at: latitude must be inside (-90, 90) degrees");
-    return Value::real(S(p).wind_at(a[0].f * kDeg, a[1].f * kDeg, true));
+    return Value::real(S(p).wind_at(a[0].f * kDeg, finite(a[1].f, "Sphere.u_at: longitude") * kDeg, true));
   });
   method(r, "Sphere", "v_at", {"float", "float"}, "float", [S](void *p, Args &a) {
     need(std::fabs(a[0].f) < 90.0, "Sphere.v_at: latitude must be inside (-90, 90) degrees");
-    return Value::real(S(p).wind_at(a[0].f * kDeg, a[1].f * kDeg, false));
+    return Value::real(S(p).wind_at(a[0].f * kDeg, finite(a[1].f, "Sphere.v_at: longitude") * kDeg, false));
   });
-  method(r, "Sphere", "vorticity_at", {"float", "float"}, "float", [S](void *p, Args &a) { return Value::real(S(p).vorticity_at(latitude(a[0].f, "Sphere.vorticity_at"), a[1].f * kDeg)); });
+  method(r, "Sphere", "vorticity_at", {"float", "float"}, "float", [S](void *p, Args &a) { return Value::real(S(p).vorticity_at(latitude(a[0].f, "Sphere.vorticity_at"), finite(a[1].f, "Sphere.vorticity_at: longitude") * kDeg)); });
   method(r, "Sphere", "mode_coefficient", {"int", "int", "string"}, "float", [S](void *p, Args &a) {
     need(a[2].s == "re" || a[2].s == "im", "Sphere.mode_coefficient: part must be re or im");
-    return Value::real(S(p).mode_coefficient(static_cast<int>(a[0].i), static_cast<int>(a[1].i), a[2].s == "im"));
+    return Value::real(S(p).mode_coefficient(narrow(a[0].i, "Sphere.mode_coefficient"), narrow(a[1].i, "Sphere.mode_coefficient"), a[2].s == "im"));
   });
   method(r, "Sphere", "wave_crest", {"int", "float"}, "float", [S](void *p, Args &a) {
-    return Value::real(S(p).wave_crest(static_cast<int>(a[0].i), latitude(a[1].f, "Sphere.wave_crest")) / kDeg);
+    return Value::real(S(p).wave_crest(narrow(a[0].i, "Sphere.wave_crest"), latitude(a[1].f, "Sphere.wave_crest")) / kDeg);
   });
   method(r, "Sphere", "save_csv", {"string"}, "void", [S](void *p, Args &a) {
     Sphere &m = S(p);
@@ -277,11 +282,11 @@ void register_host(dslvm::Registry &r, Host &h) {
   auto P = [](void *p) -> PlaneObj & { return obj<PlaneObj>(p); };
   auto sync = [](PlaneObj &o) { o.model->params() = o.params; };
   method(r, "Plane", "gravity", {"float"}, "Plane", [P, sync](void *p, Args &a) {
-    need(a[0].f > 0, "Plane.gravity: must be positive");
+    positive(a[0].f, "Plane.gravity: must be positive");
     P(p).params.gravity = a[0].f; sync(P(p)); return Value::object("Plane", p);
   });
   method(r, "Plane", "depth", {"float"}, "Plane", [P, sync](void *p, Args &a) {
-    need(a[0].f > 0, "Plane.depth: must be positive (m)");
+    positive(a[0].f, "Plane.depth: must be positive (m)");
     need(!P(p).started, "Plane.depth: set the depth before fields() or perturb()");
     P(p).params.depth = a[0].f; sync(P(p)); P(p).model->reset(); return Value::object("Plane", p);
   });
@@ -291,10 +296,10 @@ void register_host(dslvm::Registry &r, Host &h) {
   method(r, "Plane", "linear", {}, "Plane", [P, sync](void *p, Args &) { P(p).params.linear = true; sync(P(p)); return Value::object("Plane", p); });
   method(r, "Plane", "nonlinear", {}, "Plane", [P, sync](void *p, Args &) { P(p).params.linear = false; sync(P(p)); return Value::object("Plane", p); });
   method(r, "Plane", "viscosity", {"float"}, "Plane", [P, sync](void *p, Args &a) {
-    need(a[0].f >= 0, "Plane.viscosity: must not be negative"); P(p).params.viscosity = a[0].f; sync(P(p)); return Value::object("Plane", p);
+    need(std::isfinite(a[0].f) && a[0].f >= 0, "Plane.viscosity: must be finite and not negative"); P(p).params.viscosity = a[0].f; sync(P(p)); return Value::object("Plane", p);
   });
   method(r, "Plane", "drag", {"float"}, "Plane", [P, sync](void *p, Args &a) {
-    need(a[0].f >= 0, "Plane.drag: must not be negative"); P(p).params.drag = a[0].f; sync(P(p)); return Value::object("Plane", p);
+    need(std::isfinite(a[0].f) && a[0].f >= 0, "Plane.drag: must be finite and not negative"); P(p).params.drag = a[0].f; sync(P(p)); return Value::object("Plane", p);
   });
   method(r, "Plane", "fields", {"string", "string", "string"}, "Plane", [P](void *p, Args &a) {
     auto &o = P(p);
@@ -327,7 +332,7 @@ void register_host(dslvm::Registry &r, Host &h) {
   });
   method(r, "Plane", "run", {"float"}, "Plane", [P](void *p, Args &a) { P(p).model->run(finite(a[0].f, "seconds"), 0); P(p).started = true; return Value::object("Plane", p); });
   method(r, "Plane", "run_dt", {"float", "float"}, "Plane", [P](void *p, Args &a) {
-    need(a[1].f > 0, "Plane.run_dt: dt must be positive");
+    positive(a[1].f, "Plane.run_dt: dt must be positive");
     P(p).model->run(finite(a[0].f, "seconds"), a[1].f); P(p).started = true; return Value::object("Plane", p);
   });
   method(r, "Plane", "stable_dt", {}, "float", [P](void *p, Args &) { return Value::real(P(p).model->stable_dt()); });
@@ -347,9 +352,9 @@ void register_host(dslvm::Registry &r, Host &h) {
   method(r, "Plane", "h_at", {"float", "float"}, "float", [P, inside](void *p, Args &a) { inside(p, a[0].f, a[1].f, "Plane.h_at"); return Value::real(P(p).model->h_at(a[0].f, a[1].f)); });
   method(r, "Plane", "u_at", {"float", "float"}, "float", [P, inside](void *p, Args &a) { inside(p, a[0].f, a[1].f, "Plane.u_at"); return Value::real(P(p).model->u_at(a[0].f, a[1].f)); });
   method(r, "Plane", "v_at", {"float", "float"}, "float", [P, inside](void *p, Args &a) { inside(p, a[0].f, a[1].f, "Plane.v_at"); return Value::real(P(p).model->v_at(a[0].f, a[1].f)); });
-  method(r, "Plane", "zonal_amplitude", {"int", "int"}, "float", [P](void *p, Args &a) { return Value::real(P(p).model->zonal_amplitude(static_cast<int>(a[0].i), static_cast<int>(a[1].i))); });
-  method(r, "Plane", "zonal_crest", {"int", "int"}, "float", [P](void *p, Args &a) { return Value::real(P(p).model->zonal_crest(static_cast<int>(a[0].i), static_cast<int>(a[1].i))); });
-  method(r, "Plane", "v_zonal_crest", {"int", "int"}, "float", [P](void *p, Args &a) { return Value::real(P(p).model->v_zonal_crest(static_cast<int>(a[0].i), static_cast<int>(a[1].i))); });
+  method(r, "Plane", "zonal_amplitude", {"int", "int"}, "float", [P](void *p, Args &a) { return Value::real(P(p).model->zonal_amplitude(narrow(a[0].i, "Plane.zonal_amplitude"), narrow(a[1].i, "Plane.zonal_amplitude"))); });
+  method(r, "Plane", "zonal_crest", {"int", "int"}, "float", [P](void *p, Args &a) { return Value::real(P(p).model->zonal_crest(narrow(a[0].i, "Plane.zonal_crest"), narrow(a[1].i, "Plane.zonal_crest"))); });
+  method(r, "Plane", "v_zonal_crest", {"int", "int"}, "float", [P](void *p, Args &a) { return Value::real(P(p).model->v_zonal_crest(narrow(a[0].i, "Plane.v_zonal_crest"), narrow(a[1].i, "Plane.v_zonal_crest"))); });
   method(r, "Plane", "save_csv", {"string"}, "void", [P](void *p, Args &a) {
     Plane &m = *P(p).model;
     int nx = m.params().nx, ny = m.params().ny;

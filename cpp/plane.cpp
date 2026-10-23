@@ -4,6 +4,7 @@
 #include <cmath>
 #include <complex>
 #include <stdexcept>
+#include <string>
 
 namespace lmweather {
 namespace {
@@ -159,15 +160,26 @@ void Plane::run(double seconds, double dt) {
   if (!(seconds >= 0)) throw std::invalid_argument("run: seconds must not be negative");
   if (seconds == 0) return;
   if (!(dt > 0)) dt = stable_dt();
+  // stable_dt(s) = 2 s / (c sqrt(1/dx^2 + 1/dy^2) + ...) and the fastest C-grid gravity wave has omega = 2 c sqrt(...):
+  // RK4 (|omega dt| < 2 sqrt(2)) needs s <= sqrt(2) / 2
+  const double limit = stable_dt(std::sqrt(0.5));
+  if (!(dt <= limit))
+    throw std::invalid_argument("run: dt = " + std::to_string(dt) + " s exceeds the RK4 stability limit of about " + std::to_string(limit) +
+                                " s for the present state: use a smaller dt");
   int64_t n = static_cast<int64_t>(std::ceil(seconds / dt - 1e-9));
   if (n < 1) n = 1;
   if (n > 200000000) throw std::invalid_argument("run: too many steps; use a larger dt");
   double hstep = seconds / static_cast<double>(n);
   for (int64_t i = 0; i < n; i++) {
     step(hstep);
-    if ((i & 63) == 63 && !std::isfinite(h_[0] + u_[0])) throw std::runtime_error("the integration blew up (not finite): use a smaller dt");
+    if ((i & 63) == 63 || i + 1 == n) {  // all fields: a local blow-up needs many steps to reach any single point
+      double s = 0;
+      for (double x : h_) s += x;
+      for (double x : u_) s += x;
+      for (double x : v_) s += x;
+      if (!std::isfinite(s)) throw std::runtime_error("the integration blew up (not finite): use a smaller dt");
+    }
   }
-  for (double x : h_) if (!std::isfinite(x)) throw std::runtime_error("the integration blew up (not finite): use a smaller dt");
 }
 
 double Plane::mean_depth() const {

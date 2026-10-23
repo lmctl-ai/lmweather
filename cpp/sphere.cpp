@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <string>
 
 namespace lmweather {
 namespace {
@@ -362,7 +363,9 @@ double Sphere::stable_dt(double safety) const {
 }
 
 void Sphere::check_finite() const {
-  double s = std::abs(phi_[idx(0, 0)]) + std::abs(zeta_[idx(1, 1)]);
+  // every coefficient: phi(0,0) has zero tendency and a single sample can stay finite while the rest overflows
+  double s = 0;
+  for (size_t i = 0; i < zeta_.size(); i++) s += std::abs(zeta_[i]) + std::abs(delta_[i]) + std::abs(phi_[i]);
   if (!std::isfinite(s)) throw std::runtime_error("the integration blew up (not finite): use a smaller dt");
 }
 
@@ -370,6 +373,11 @@ void Sphere::run(double seconds, double dt) {
   if (!(seconds >= 0)) throw std::invalid_argument("run: seconds must not be negative");
   if (seconds == 0) return;
   if (!(dt > 0)) dt = stable_dt();
+  // RK4 is stable for |omega dt| < 2 sqrt(2); beyond it the result is wrong long before it overflows to NaN
+  const double limit = stable_dt(2.0 * std::sqrt(2.0));
+  if (!(dt <= limit))
+    throw std::invalid_argument("run: dt = " + std::to_string(dt) + " s exceeds the RK4 stability limit of about " + std::to_string(limit) +
+                                " s for the present state: use a smaller dt");
   int64_t n = static_cast<int64_t>(std::ceil(seconds / dt - 1e-9));
   if (n < 1) n = 1;
   if (n > 50000000) throw std::invalid_argument("run: more than 5e7 steps; use a larger dt");

@@ -18,4 +18,8 @@ south-west corner. CSV outputs are space separated, `%.10g`, rows grouped by lat
 (gnuplot `splot ... with pm3d` with `set pm3d map`): sphere `lon lat h u v zeta`, plane `x y h u v zeta` (u, v at centers).
 `save_zonal_mean`: `lat h_mean u_mean`; `save_row/column`: `x h` / `y h`.
 
-Errors: a diverging integration stops with "blew up (not finite): use a smaller dt"; out-of-range arguments name the argument.
+Errors: `run_dt` with a step above the RK4 limit for the present state (sphere 2 sqrt(2) / omega_max, plane `stable_dt` with
+safety sqrt(2)/2) stops with "exceeds the RK4 stability limit" before stepping, because an unstable RK4 run gives wrong but
+finite numbers for many steps; a diverging integration (checked over all coefficients/fields every 64 steps and at the end)
+stops with "blew up (not finite): use a smaller dt"; out-of-range or non-finite arguments name the argument (int arguments
+are range-checked before narrowing, so 2^32 + 2 is not taken as 2).
