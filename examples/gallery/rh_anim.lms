@@ -10,7 +10,7 @@ let m0 = s.mean_height();
 let e0 = s.energy();
 for (k in range(0, 56)) {
   s.save_csv("data/rh_frames/f" + str(k) + ".csv");
-  s.run_dt(21600.0, 1800.0);
+  s.run_dt(21600.0, 1200.0);
 }
 wx.assert_close(s.mean_height(), m0, 0.00000001);
 wx.assert_close(s.energy() / e0, 1.0, 0.0005);

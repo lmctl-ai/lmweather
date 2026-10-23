@@ -16,9 +16,14 @@ Every test asserts a closed form, an exact property or a published test-case beh
   untilted planet drifts: l2 > 1e-3 in one day).
 - **Williamson test case 6** (`tests/sphere_rossby_haurwitz.lms`, `examples/rossby_haurwitz.lms`): wave 4 with
   h0 = 8000 m, omega = K = 7.848e-6. Mass exact (1e-9), energy within 1e-5 (T21) / 1e-8 (T42 14 days), potential enstrophy
-  within 1e-4. The pattern moves east at 11.3 deg/day (T21 and T42 agree to < 1 deg in 4 days); the barotropic non-divergent
-  estimate nu = (R(3+R)w - 2 Omega)/((1+R)(2+R)) = 12.2 deg/day is a ~7% overestimate for the free-surface wave,
-  asserted as 0.88 < ratio < 0.98.
+  within 1e-4. There is no closed-form shallow-water phase speed (the Rossby-Haurwitz wave solves the non-divergent equations
+  only, and wave 4 is weakly unstable: Thuburn and Li 2000); the oracle is the resolution-converged drift of the m = 4 crest
+  at 45 N: 79.3 (T21, dt 1200 s), 79.1 (T42, dt 600 s), 79.0 (T63, dt 450 s) degrees in 7 days = 11.3 deg/day, asserted as
+  79.1 +- 0.7 at T21, T21 vs T42 within 0.5 deg at day 4, and halving dt moves the phase < 0.01 deg. The barotropic
+  non-divergent estimate nu = (R(3+R)w - 2 Omega)/((1+R)(2+R)) = 12.2 deg/day is a ~7% overestimate for the free-surface
+  wave (asserted 0.88 < ratio < 0.98 over 3 days). The instantaneous drift is not uniform (10.8 deg/day on day 1, 11.7 on
+  day 4): the free-surface wave is not a single steadily propagating mode. Steps are 62-65% of the RK4 limit (1845 s at
+  T21, 967 s at T42, 655 s at T63 for this state); before this change they ran at 93-98% of it.
 - **Geostrophic adjustment** (`tests/plane_adjustment.lms`, `examples/geostrophic_adjustment.lms`, `tests/sphere_adjustment.lms`):
   channel with f0 = 1e-4, H = 1000 m (Ld = 990.5 km), Gaussian bump width ~400 km varying in y; the time mean over 10 inertial
   periods equals the potential-vorticity prediction h_n = h0_n/(1 + (n pi Ld/Ly)^2) in cosine modes, center 0.3018 m vs 0.3024 m

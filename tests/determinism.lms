@@ -11,7 +11,7 @@ wx.assert_true(a.h_at(1234567.0, 999999.0) != c.h_at(1234567.0, 999999.0));
 wx.assert_close(a.mean_depth(), 500.0, 0.000000001);
 a.save_csv("build/determinism_plane.csv");
 let s = wx.sphere(21).williamson6();
-s.run_dt(43200.0, 1800.0);
+s.run_dt(43200.0, 1200.0);
 s.save_csv("build/determinism_sphere.csv");
 s.save_zonal_mean("build/determinism_zonal.csv");
 end _dsl_

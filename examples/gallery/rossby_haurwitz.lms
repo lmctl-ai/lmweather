@@ -1,5 +1,5 @@
 # Williamson test case 6 (Rossby-Haurwitz wave 4) at T42 over 14 days: the planetary wave train drifts east at
-# ~12 deg/day while global mean height and total energy are conserved.
+# about 11.3 deg/day (7% below the non-divergent 12.2 deg/day) while global mean height and total energy are conserved.
 # lmweather integrates the spectral shallow-water equations; lmplot draws images/rossby_haurwitz.png.
 mkdir("images");
 mkdir("data");
@@ -11,7 +11,7 @@ let c0 = s.wave_crest(4, 45.0);
 let drift = "0 0.0 0.0\n";
 let prev = 0.0;
 for (d in range(1, 15)) {
-  s.run_dt(86400.0, 900.0);
+  s.run_dt(86400.0, 600.0);
   if (d == 7) { s.save_csv("data/rh_day7.csv"); }
   let raw = s.wave_crest(4, 45.0) - c0;
   let step = raw - prev;

@@ -1,5 +1,8 @@
 # Williamson test case 6: Rossby-Haurwitz wave of zonal wavenumber 4. Mass is conserved exactly, energy and potential
-# enstrophy to truncation error, and the pattern moves east at about nu = (R (3 + R) w - 2 Omega) / ((1 + R)(2 + R)).
+# enstrophy to truncation error, and the pattern moves east. There is no closed form for the shallow-water phase speed
+# (the wave is an exact solution of the non-divergent equations only, and the free surface slows it); the oracle is the
+# resolution-converged crest drift of this model: 79.3 (T21), 79.1 (T42), 79.0 (T63) degrees in 7 days = 11.3 deg/day,
+# 7% below the non-divergent nu = (R (3 + R) w - 2 Omega) / ((1 + R)(2 + R)) = 12.2 deg/day.
 out = ARGV.len() > 0 ? ARGV[0] : "build/sphere_rossby_haurwitz.dslb";
 p = _dsl_ cli="lmweather";
 let pi = 3.141592653589793;
@@ -13,29 +16,44 @@ let e0 = s.energy();
 let q0 = s.enstrophy();
 let c0 = s.wave_crest(4, 45.0);
 wx.assert_close(m0, 9523.0, 5.0);
-# 3 days at T21 with a 30 minute step: the crest of the m = 4 harmonic moves east. The barotropic non-divergent
-# formula gives 12.2 deg/day; with the free surface the shallow-water wave is about 7% slower (11.3 deg/day).
-s.run_dt(3.0 * 86400.0, 1800.0);
-let shift = s.wave_crest(4, 45.0) - c0;
-shift = shift - floor(shift / 90.0 + 0.5) * 90.0;            # modulo the 90 degree wavelength
-let want = nu * 3.0 * 86400.0 * 180.0 / pi;                  # degrees
-wx.print("crest moved " + str(shift) + " degrees in 3 days, barotropic prediction " + str(want));
-wx.assert_true(shift / want > 0.88 && shift / want < 0.98);
-# keep going to 7 days: conservation holds throughout
-s.run_dt(4.0 * 86400.0, 1800.0);
+# T21 with a 20 minute step (65% of the RK4 limit of 1845 s), one day at a time; crests repeat every 90 degrees, so the
+# drift is accumulated from daily increments unwrapped modulo the wavelength
+let drift = 0.0;
+let prev = 0.0;
+let drift3 = 0.0;
+for (d in range(1, 8)) {
+  s.run_dt(86400.0, 1200.0);
+  let raw = s.wave_crest(4, 45.0) - c0;
+  let step = raw - prev;
+  step = step - floor(step / 90.0 + 0.5) * 90.0;
+  prev = prev + step;
+  drift = prev;
+  if (d == 3) { drift3 = drift; }
+}
+let want3 = nu * 3.0 * 86400.0 * 180.0 / pi;                 # non-divergent estimate, degrees
+wx.print("crest moved " + str(drift3) + " degrees in 3 days (non-divergent estimate " + str(want3) + "), " + str(drift) + " in 7 days");
+wx.assert_true(drift3 / want3 > 0.88 && drift3 / want3 < 0.98);
+wx.assert_close(drift, 79.1, 0.7);                           # converged 7-day drift (T21 79.3, T42 79.1, T63 79.0)
+# conservation holds throughout
 wx.assert_close(s.mean_height(), m0, 0.000000001);
 wx.assert_close(s.energy() / e0, 1.0, 0.00001);
 wx.assert_close(s.enstrophy() / q0, 1.0, 0.0001);
 # the pattern is unchanged in shape: the wave-4 field vanishes at the pole, so the height there stays near 8000 m (within 10%)
 wx.assert_close(s.height_at(89.0, 0.0) / 8000.0, 1.0, 0.1);
-# higher resolution agrees: T42 for 4 days gives the same phase as T21 within a degree
+# higher resolution agrees: T42 (10 minute step, 62% of its limit) for 4 days gives the same phase as T21 within half a degree
 let a21 = wx.sphere(21).williamson6();
 let a42 = wx.sphere(42).williamson6();
-a21.run_dt(4.0 * 86400.0, 1800.0);
-a42.run_dt(4.0 * 86400.0, 900.0);
+a21.run_dt(4.0 * 86400.0, 1200.0);
+a42.run_dt(4.0 * 86400.0, 600.0);
 let dc = a21.wave_crest(4, 45.0) - a42.wave_crest(4, 45.0);
 dc = dc - floor(dc / 90.0 + 0.5) * 90.0;                    # crests are defined modulo the wavelength
-wx.assert_close(dc, 0.0, 1.0);
+wx.assert_close(dc, 0.0, 0.5);
 wx.assert_close(a21.height_at(45.0, 30.0), a42.height_at(45.0, 30.0), 15.0);
+# the step size matters for nothing but cost once it is stable: halving it changes the 4-day phase by < 0.01 degree
+let b21 = wx.sphere(21).williamson6();
+b21.run_dt(4.0 * 86400.0, 600.0);
+let db = a21.wave_crest(4, 45.0) - b21.wave_crest(4, 45.0);
+db = db - floor(db / 90.0 + 0.5) * 90.0;
+wx.assert_close(db, 0.0, 0.01);
 end _dsl_
 savedsl(p, out);
