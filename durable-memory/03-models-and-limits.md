@@ -26,8 +26,15 @@ E = (U^2 + V^2) / (2 (1 - mu^2)), D(A, B) = (1/(a (1-mu^2))) dA/dlon + (1/a) dB/
 - Exact invariants: the (0,0) coefficient of Phi has zero tendency, so `mean_height` is conserved to rounding (1e-12).
   Energy `energy()` = area mean of h|v|^2/2 + g h^2/2; potential enstrophy = mean of eta^2/(2h).
 - Diagnostics at a point (`height_at`, `u_at`, ...) synthesize the spectral series exactly (no interpolation).
-- Limits: no orography, no forcing/dissipation other than hyperdiffusion, no moisture or vertical structure, truncation
-  at most T170, and no semi-Lagrangian or implicit option (long dt not possible).
+- Passive tracer (`tracer(expr)`, any unit): a fourth spectral field q with dq/dt = -v . grad q, formed as
+  -D(U q, V q) + q delta (flux form minus the divergence part, both on the grid). Stepped inside the same RK4 and filtered like
+  the height. A non-divergent flow conserves the mean of q to rounding; a divergent flow conserves the mass h q (`tracer_mass`,
+  to the quadrature error of the products: 1e-5 over 2 days of test case 6 at T21). `advect_only()` freezes zeta, delta and
+  Phi (prescribed winds, Williamson test case 1: `williamson1(alpha)` sets the solid-body winds, the cosine bell as tracer and
+  the flag); then the step limit is set by the winds alone, (T/a)|v|_max. Spectral advection has no shape preservation:
+  the truncated cosine bell undershoots to -12 m at T21, -3.2 m at T42, -1.4 m at T63 (and keeps that ringing while it moves).
+- Limits: no forcing/dissipation other than hyperdiffusion, no moisture or vertical structure, truncation at most T170,
+  no semi-Lagrangian or implicit option (long dt not possible), and no shape-preserving (monotone) tracer scheme.
 
 ## Plane (C-grid finite differences)
 

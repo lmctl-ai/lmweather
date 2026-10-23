@@ -211,6 +211,54 @@ void register_host(dslvm::Registry &r, Host &h) {
     m.set_state_grid(hh, uu, vv);
     return Value::object("Sphere", p);
   });
+  method(r, "Sphere", "tracer", {"string"}, "Sphere", [S](void *p, Args &a) {
+    Sphere &m = S(p);
+    const auto &sp = m.params();
+    std::map<std::string, double> par{{"a", sp.radius}, {"omega", sp.omega}, {"g", sp.gravity}};
+    auto eq = compile(a[0].s, {"lon", "lat"}, par);
+    size_t n = static_cast<size_t>(m.nlat()) * m.nlon();
+    std::vector<double> qq(n);
+    for (int j = 0; j < m.nlat(); j++)
+      for (int k = 0; k < m.nlon(); k++) {
+        double x[2] = {m.lon(k), m.lat(j)};
+        qq[static_cast<size_t>(j) * m.nlon() + k] = eq.eval(x);
+        need(std::isfinite(qq[static_cast<size_t>(j) * m.nlon() + k]), "Sphere.tracer: the expression is not finite on the grid");
+      }
+    m.set_tracer_grid(qq);
+    return Value::object("Sphere", p);
+  });
+  method(r, "Sphere", "advect_only", {}, "Sphere", [S](void *p, Args &) { S(p).set_advect_only(true); return Value::object("Sphere", p); });
+  method(r, "Sphere", "williamson1", {"float"}, "Sphere", [S](void *p, Args &a) {
+    // Williamson et al. (1992) test case 1: a cosine bell (h0 = 1000, radius a/3, centred at 270 E on the equator) carried once
+    // around the globe in 12 days by solid-body rotation about an axis tilted by alpha; the winds are prescribed (advect-only)
+    Sphere &m = S(p);
+    const auto &sp = m.params();
+    double al = finite(a[0].f, "angle"), u0 = 2 * kPi * sp.radius / (12 * 86400.0), R = sp.radius / 3, lonc = 1.5 * kPi, latc = 0;
+    m.set_axis_tilt(al);
+    size_t n = static_cast<size_t>(m.nlat()) * m.nlon();
+    std::vector<double> hh(n, 1000.0), uu(n), vv(n), qq(n);
+    for (int j = 0; j < m.nlat(); j++)
+      for (int k = 0; k < m.nlon(); k++) {
+        double lat = m.lat(j), lon = m.lon(k);
+        size_t i = static_cast<size_t>(j) * m.nlon() + k;
+        uu[i] = u0 * (std::cos(lat) * std::cos(al) + std::sin(lat) * std::cos(lon) * std::sin(al));
+        vv[i] = -u0 * std::sin(lon) * std::sin(al);
+        double c = std::sin(latc) * std::sin(lat) + std::cos(latc) * std::cos(lat) * std::cos(lon - lonc);
+        double rr = sp.radius * std::acos(std::max(-1.0, std::min(1.0, c)));
+        qq[i] = rr < R ? 500.0 * (1 + std::cos(kPi * rr / R)) : 0.0;
+      }
+    m.set_state_grid(hh, uu, vv);
+    m.set_tracer_grid(qq);
+    m.set_advect_only(true);
+    return Value::object("Sphere", p);
+  });
+  method(r, "Sphere", "tracer_at", {"float", "float"}, "float", [S](void *p, Args &a) { return Value::real(S(p).tracer_at(latitude(a[0].f, "Sphere.tracer_at"), finite(a[1].f, "Sphere.tracer_at: longitude") * kDeg)); });
+  method(r, "Sphere", "tracer_mean", {}, "float", [S](void *p, Args &) { return Value::real(S(p).tracer_mean()); });
+  method(r, "Sphere", "tracer_mass", {}, "float", [S](void *p, Args &) { return Value::real(S(p).tracer_mass()); });
+  method(r, "Sphere", "tracer_min", {}, "float", [S](void *p, Args &) { return Value::real(S(p).tracer_min()); });
+  method(r, "Sphere", "tracer_max", {}, "float", [S](void *p, Args &) { return Value::real(S(p).tracer_max()); });
+  method(r, "Sphere", "tracer_error_l2", {}, "float", [S](void *p, Args &) { return Value::real(S(p).tracer_error_l2()); });
+  method(r, "Sphere", "tracer_error_linf", {}, "float", [S](void *p, Args &) { return Value::real(S(p).tracer_error_linf()); });
   method(r, "Sphere", "mode", {"int", "int", "float", "float"}, "Sphere", [S](void *p, Args &a) {
     positive(a[3].f, "Sphere.mode: mean depth must be positive");
     S(p).add_mode(narrow(a[0].i, "Sphere.mode"), narrow(a[1].i, "Sphere.mode"), finite(a[2].f, "amplitude"), a[3].f);
@@ -259,11 +307,12 @@ void register_host(dslvm::Registry &r, Host &h) {
   method(r, "Sphere", "save_csv", {"string"}, "void", [S](void *p, Args &a) {
     Sphere &m = S(p);
     std::vector<double> hh = m.grid_height(), uu = m.grid_u(), vv = m.grid_v(), zz = m.grid_vorticity();
+    std::vector<double> qq = m.has_tracer() ? m.grid_tracer() : std::vector<double>(hh.size(), 0.0);
     std::string t;
     for (int j = 0; j < m.nlat(); j++) {
       for (int k = 0; k < m.nlon(); k++) {
         size_t i = static_cast<size_t>(j) * m.nlon() + k;
-        t += g(m.lon(k) / kDeg) + " " + g(m.lat(j) / kDeg) + " " + g(hh[i]) + " " + g(uu[i]) + " " + g(vv[i]) + " " + g(zz[i]) + "\n";
+        t += g(m.lon(k) / kDeg) + " " + g(m.lat(j) / kDeg) + " " + g(hh[i]) + " " + g(uu[i]) + " " + g(vv[i]) + " " + g(zz[i]) + " " + g(qq[i]) + "\n";
       }
       t += "\n";  // blank line between latitude rows: gnuplot pm3d
     }

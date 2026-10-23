@@ -24,6 +24,13 @@ Every test asserts a closed form, an exact property or a published test-case beh
   wave (asserted 0.88 < ratio < 0.98 over 3 days). The instantaneous drift is not uniform (10.8 deg/day on day 1, 11.7 on
   day 4): the free-surface wave is not a single steadily propagating mode. Steps are 62-65% of the RK4 limit (1845 s at
   T21, 967 s at T42, 655 s at T63 for this state); before this change they ran at 93-98% of it.
+- **Williamson test case 1** (`tests/sphere_tracer.lms`): cosine bell (1000 m, radius a/3) advected once around the globe in
+  12 days over the poles (alpha = pi/2 - 0.05) at T42 with 1800 s steps: normalized l2 and l-infinity errors against the
+  truncated initial bell 3e-4 (asserted < 1e-3; T21 with 3600 s steps 1.3e-3, asserted < 3e-3); at day 6 the bell is at
+  the antipode (l2 = sqrt(2) within 1e-3); the mean is conserved to 1e-9. The representation error of the bell is the
+  honest TC1 number: centre 1003.2, peak 989.5, undershoot -3.2 m at T42. The same bell as an expression carried by the
+  steady dynamics of test case 2 agrees with the frozen-wind run to 1e-6 after 3 days. In test case 6 (divergent) the
+  tracer mass h q is conserved to 1e-4 over 2 days while the mean of q is not.
 - **Geostrophic adjustment** (`tests/plane_adjustment.lms`, `examples/geostrophic_adjustment.lms`, `tests/sphere_adjustment.lms`):
   channel with f0 = 1e-4, H = 1000 m (Ld = 990.5 km), Gaussian bump width ~400 km varying in y; the time mean over 10 inertial
   periods equals the potential-vorticity prediction h_n = h0_n/(1 + (n pi Ld/Ly)^2) in cosine modes, center 0.3018 m vs 0.3024 m

@@ -226,7 +226,70 @@ void Sphere::set_state_grid(const std::vector<double> &h, const std::vector<doub
   mark_reference();
 }
 
-void Sphere::mark_reference() { synthesize_scalar(phi_, ref_phi_grid_); }
+void Sphere::mark_reference() {
+  synthesize_scalar(phi_, ref_phi_grid_);
+  if (has_tracer_) synthesize_scalar(q_, ref_q_grid_);
+}
+
+void Sphere::set_tracer_grid(const std::vector<double> &q) {
+  if (q.size() != static_cast<size_t>(nlat_) * nlon_) throw std::invalid_argument("grid size mismatch");
+  analyze_scalar(q, q_);
+  has_tracer_ = true;
+  synthesize_scalar(q_, ref_q_grid_);
+}
+
+// dq/dt = -v . grad q = -D(U q, V q) + q delta (the flux form minus the divergence part), so a non-divergent flow
+// conserves the mean of q exactly and every flow conserves it to the quadrature error of q delta
+void Sphere::tracer_tendency(const std::vector<cplx> &z, const std::vector<cplx> &d, const std::vector<cplx> &q, std::vector<cplx> &dq) const {
+  const size_t ng = static_cast<size_t>(nlat_) * nlon_;
+  std::vector<double> U, V, qg, dg;
+  winds_spectral_to_grid(z, d, U, V);
+  synthesize_scalar(q, qg);
+  synthesize_scalar(d, dg);
+  std::vector<double> A(ng), B(ng), C(ng);
+  for (size_t i = 0; i < ng; i++) { A[i] = U[i] * qg[i]; B[i] = V[i] * qg[i]; C[i] = qg[i] * dg[i]; }
+  std::vector<cplx> flux, corr;
+  analyze_divergence(A, B, flux);
+  analyze_scalar(C, corr);
+  dq.resize(q.size());
+  for (size_t i = 0; i < q.size(); i++) dq[i] = corr[i] - flux[i];
+}
+
+std::vector<double> Sphere::grid_tracer() const {
+  if (!has_tracer_) throw std::runtime_error("no tracer: set one with tracer() first");
+  std::vector<double> g;
+  synthesize_scalar(q_, g);
+  return g;
+}
+double Sphere::tracer_mean() const {
+  if (!has_tracer_) throw std::runtime_error("no tracer: set one with tracer() first");
+  return q_[idx(0, 0)].real() / std::sqrt(2.0);
+}
+double Sphere::tracer_mass() const {
+  std::vector<double> h = grid_height(), q = grid_tracer();
+  double s = 0;
+  for (int j = 0; j < nlat_; j++) {
+    double row = 0;
+    for (int k = 0; k < nlon_; k++) { size_t i = static_cast<size_t>(j) * nlon_ + k; row += h[i] * q[i]; }
+    s += w_[j] * row / nlon_;
+  }
+  return 0.5 * s;
+}
+double Sphere::tracer_min() const { std::vector<double> g = grid_tracer(); return *std::min_element(g.begin(), g.end()); }
+double Sphere::tracer_max() const { std::vector<double> g = grid_tracer(); return *std::max_element(g.begin(), g.end()); }
+double Sphere::tracer_at(double lat, double lon) const {
+  if (!has_tracer_) throw std::runtime_error("no tracer: set one with tracer() first");
+  double mu = std::sin(lat);
+  std::vector<double> col;
+  double sum = 0;
+  for (int m = 0; m <= N_; m++) {
+    legendre_column(m, N_, mu, col);
+    cplx g = 0;
+    for (int n = m; n <= N_; n++) g += q_[idx(m, n)] * col[n - m];
+    sum += (m == 0 ? 1.0 : 2.0) * (g * std::exp(cplx(0, m * lon))).real();
+  }
+  return sum;
+}
 
 void Sphere::add_mode(int n, int m, double amplitude, double mean_depth) {
   if (m < 0 || n < std::max(m, 1) || n > N_) throw std::invalid_argument("mode (n, m) needs 0 <= m <= n <= truncation and n >= 1");
@@ -330,24 +393,36 @@ void Sphere::filter(double dt) {
       zeta_[idx(m, n)] *= fv;
       delta_[idx(m, n)] *= fv;
       phi_[idx(m, n)] *= fp;
+      if (has_tracer_) q_[idx(m, n)] *= fp;
     }
 }
 
 void Sphere::step(double dt) {
   using V = std::vector<cplx>;
-  V z1, d1, f1, z2, d2, f2, z3, d3, f3, z4, d4, f4, zt, dt_, ft;
+  // classical RK4 over (zeta, delta, phi) and, when present, the tracer q; in advect-only mode the dynamics are frozen
+  struct State { V z, d, f, q; };
+  auto rhs = [&](const State &s, State &k) {
+    if (advect_only_) { k.z.assign(s.z.size(), 0); k.d.assign(s.z.size(), 0); k.f.assign(s.z.size(), 0); }
+    else tendencies(s.z, s.d, s.f, k.z, k.d, k.f);
+    if (has_tracer_) tracer_tendency(s.z, s.d, s.q, k.q);
+  };
   auto axpy = [](const V &x, const V &k, double c) { V r(x.size()); for (size_t i = 0; i < x.size(); i++) r[i] = x[i] + c * k[i]; return r; };
-  tendencies(zeta_, delta_, phi_, z1, d1, f1);
-  zt = axpy(zeta_, z1, 0.5 * dt); dt_ = axpy(delta_, d1, 0.5 * dt); ft = axpy(phi_, f1, 0.5 * dt);
-  tendencies(zt, dt_, ft, z2, d2, f2);
-  zt = axpy(zeta_, z2, 0.5 * dt); dt_ = axpy(delta_, d2, 0.5 * dt); ft = axpy(phi_, f2, 0.5 * dt);
-  tendencies(zt, dt_, ft, z3, d3, f3);
-  zt = axpy(zeta_, z3, dt); dt_ = axpy(delta_, d3, dt); ft = axpy(phi_, f3, dt);
-  tendencies(zt, dt_, ft, z4, d4, f4);
+  auto advance = [&](const State &s, const State &k, double c) {
+    State t;
+    t.z = axpy(s.z, k.z, c); t.d = axpy(s.d, k.d, c); t.f = axpy(s.f, k.f, c);
+    if (has_tracer_) t.q = axpy(s.q, k.q, c);
+    return t;
+  };
+  State s0{zeta_, delta_, phi_, q_}, k1, k2, k3, k4;
+  rhs(s0, k1);
+  rhs(advance(s0, k1, 0.5 * dt), k2);
+  rhs(advance(s0, k2, 0.5 * dt), k3);
+  rhs(advance(s0, k3, dt), k4);
   for (size_t i = 0; i < zeta_.size(); i++) {
-    zeta_[i] += dt / 6 * (z1[i] + 2.0 * z2[i] + 2.0 * z3[i] + z4[i]);
-    delta_[i] += dt / 6 * (d1[i] + 2.0 * d2[i] + 2.0 * d3[i] + d4[i]);
-    phi_[i] += dt / 6 * (f1[i] + 2.0 * f2[i] + 2.0 * f3[i] + f4[i]);
+    zeta_[i] += dt / 6 * (k1.z[i] + 2.0 * k2.z[i] + 2.0 * k3.z[i] + k4.z[i]);
+    delta_[i] += dt / 6 * (k1.d[i] + 2.0 * k2.d[i] + 2.0 * k3.d[i] + k4.d[i]);
+    phi_[i] += dt / 6 * (k1.f[i] + 2.0 * k2.f[i] + 2.0 * k3.f[i] + k4.f[i]);
+    if (has_tracer_) q_[i] += dt / 6 * (k1.q[i] + 2.0 * k2.q[i] + 2.0 * k3.q[i] + k4.q[i]);
   }
   filter(dt);
   t_ += dt;
@@ -358,7 +433,9 @@ double Sphere::stable_dt(double safety) const {
   double hmax = 0, wmax = 0;
   for (size_t i = 0; i < h.size(); i++) { hmax = std::max(hmax, h[i]); wmax = std::max(wmax, std::hypot(u[i], v[i])); }
   if (!(hmax > 0)) throw std::runtime_error("the height field must be positive to step the model");
-  double omega = (N_ / p_.radius) * (std::sqrt(p_.gravity * hmax) + wmax) + 2 * p_.omega;
+  // advect-only: no gravity waves and no Coriolis term, the winds alone set the limit (zero winds: nothing moves, any step is fine)
+  double omega = advect_only_ ? (N_ / p_.radius) * wmax : (N_ / p_.radius) * (std::sqrt(p_.gravity * hmax) + wmax) + 2 * p_.omega;
+  if (!(omega > 0)) return 1e9;
   return safety / omega;
 }
 
@@ -366,11 +443,13 @@ void Sphere::check_finite() const {
   // every coefficient: phi(0,0) has zero tendency and a single sample can stay finite while the rest overflows
   double s = 0;
   for (size_t i = 0; i < zeta_.size(); i++) s += std::abs(zeta_[i]) + std::abs(delta_[i]) + std::abs(phi_[i]);
+  if (has_tracer_) for (size_t i = 0; i < q_.size(); i++) s += std::abs(q_[i]);
   if (!std::isfinite(s)) throw std::runtime_error("the integration blew up (not finite): use a smaller dt");
 }
 
 void Sphere::run(double seconds, double dt) {
   if (!(seconds >= 0)) throw std::invalid_argument("run: seconds must not be negative");
+  if (advect_only_ && !has_tracer_) throw std::invalid_argument("advect_only: set a tracer first (Sphere.tracer)");
   if (seconds == 0) return;
   if (!(dt > 0)) dt = stable_dt();
   // RK4 is stable for |omega dt| < 2 sqrt(2); beyond it the result is wrong long before it overflows to NaN
@@ -473,6 +552,8 @@ static void errors(const Sphere &s, const std::vector<double> &ref_phi, const st
 }
 double Sphere::height_error_l2() const { double a, b; errors(*this, ref_phi_grid_, grid_height(), p_.gravity, a, b); return a; }
 double Sphere::height_error_linf() const { double a, b; errors(*this, ref_phi_grid_, grid_height(), p_.gravity, a, b); return b; }
+double Sphere::tracer_error_l2() const { double a, b; errors(*this, ref_q_grid_, grid_tracer(), 1.0, a, b); return a; }
+double Sphere::tracer_error_linf() const { double a, b; errors(*this, ref_q_grid_, grid_tracer(), 1.0, a, b); return b; }
 
 double Sphere::height_at(double lat, double lon) const {
   double mu = std::sin(lat);

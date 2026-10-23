@@ -119,6 +119,73 @@
             "returns": "Sphere"
           }
         ],
+        "tracer": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "Sphere"
+          }
+        ],
+        "advect_only": [
+          {
+            "params": [],
+            "returns": "Sphere"
+          }
+        ],
+        "williamson1": [
+          {
+            "params": [
+              "float"
+            ],
+            "returns": "Sphere"
+          }
+        ],
+        "tracer_at": [
+          {
+            "params": [
+              "float",
+              "float"
+            ],
+            "returns": "float"
+          }
+        ],
+        "tracer_mean": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "tracer_mass": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "tracer_min": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "tracer_max": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "tracer_error_l2": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "tracer_error_linf": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
         "mode": [
           {
             "params": [

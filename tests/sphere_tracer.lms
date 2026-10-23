@@ -1,0 +1,60 @@
+# Passive tracer advection on the sphere. Williamson et al. (1992) test case 1: a cosine bell (1000 m, radius a/3) is
+# carried once around the globe in 12 days by solid-body rotation; the exact answer is the initial field. The spectral
+# advection of the truncated bell is exact up to time stepping (normalized l2 3e-4 at T42 after 12 days), so the real
+# test-case error is the representation of the bell at the truncation (undershoot -3.2 m, peak 989.5 m at T42).
+out = ARGV.len() > 0 ? ARGV[0] : "build/sphere_tracer.dslb";
+p = _dsl_ cli="lmweather";
+let pi = 3.141592653589793;
+# over the poles (alpha = pi/2 - 0.05, the hardest orientation for a lat-lon grid), T42, 30 minute steps (16% of the limit)
+let s = wx.sphere(42).williamson1(pi / 2.0 - 0.05);
+let q0 = s.tracer_mean();
+let c0 = s.tracer_at(0.0, 270.0);
+wx.assert_close(c0, 1000.0, 5.0);                       # the truncated bell: 1003.2 m at the centre
+wx.assert_true(s.tracer_min() > -4.0 && s.tracer_min() < 0.0);  # Gibbs undershoot of the truncated bell
+wx.assert_true(s.tracer_max() > 985.0 && s.tracer_max() < 1000.0);
+wx.assert_close(s.tracer_at(0.0, 90.0), 0.0, 1.5);       # nothing at the antipode yet (ringing of -0.8 m)
+wx.assert_close(s.tracer_error_l2(), 0.0, 0.0);
+wx.assert_close(s.max_wind(), 2.0 * pi * 6371220.0 / (12.0 * 86400.0), 0.02);
+s.run_dt(6.0 * 86400.0, 1800.0);
+# half way: the bell sits at the antipode (0 N, 90 E), so the error against the start is two disjoint bells: l2 = sqrt(2)
+wx.assert_close(s.tracer_at(0.0, 90.0), c0, 0.1);
+wx.assert_close(s.tracer_error_l2(), sqrt(2.0), 0.001);
+wx.assert_close(s.tracer_error_linf(), 1.0, 0.002);
+s.run_dt(6.0 * 86400.0, 1800.0);
+wx.print("TC1 T42 over the poles, day 12: l2 " + str(s.tracer_error_l2()) + " linf " + str(s.tracer_error_linf()) + " min " + str(s.tracer_min()) + " max " + str(s.tracer_max()));
+wx.assert_true(s.tracer_error_l2() < 0.001);
+wx.assert_true(s.tracer_error_linf() < 0.001);
+wx.assert_close(s.tracer_at(0.0, 270.0), c0, 0.1);
+wx.assert_close(s.tracer_mean(), q0, 0.000000001);       # non-divergent flow: the mean is exact
+wx.assert_close(s.time(), 12.0 * 86400.0, 0.001);
+wx.assert_close(s.error_l2(), 0.0, 0.0);                 # advect-only: height and winds are frozen
+# T21 with 1 hour steps: the time-stepping error is larger but still 1e-3
+let c = wx.sphere(21).williamson1(0.0);
+let cc0 = c.tracer_at(0.0, 270.0);
+c.run_dt(12.0 * 86400.0, 3600.0);
+wx.assert_true(c.tracer_error_l2() < 0.003);
+wx.assert_close(c.tracer_at(0.0, 270.0), cc0, 0.3);
+# the same bell written as an expression and carried by the real dynamics of test case 2 (a steady flow, so the winds
+# of the two runs are the same) agrees with the frozen-wind run to rounding
+let d = wx.sphere(21).williamson2(0.05).tracer("500.0 * (1 + cos(pi * min(1.0, 3.0 * acos(cos(lat) * cos(lon - 1.5 * pi)))))");
+let f = wx.sphere(21).williamson1(0.05);
+wx.assert_close(d.tracer_at(0.0, 270.0), f.tracer_at(0.0, 270.0), 0.0000000001);
+d.run_dt(3.0 * 86400.0, 1200.0);
+f.run_dt(3.0 * 86400.0, 1200.0);
+wx.assert_close(d.tracer_at(20.0, 0.0), f.tracer_at(20.0, 0.0), 0.000001);
+wx.assert_close(d.tracer_at(0.0, 0.0), f.tracer_at(0.0, 0.0), 0.000001);
+wx.assert_close(d.tracer_error_l2(), f.tracer_error_l2(), 0.0000001);
+wx.assert_true(d.error_l2() < 0.000001);                  # and the dynamics stayed steady
+# a divergent flow (Rossby-Haurwitz wave) does not conserve the mean of q but the mass h q (to the quadrature error of
+# the products); the tracer stays within its initial range up to the spectral overshoot
+let r = wx.sphere(21).williamson6().tracer("1.0 + sin(lat)");
+let mass0 = r.tracer_mass();
+let mean0 = r.tracer_mean();
+wx.assert_close(mean0, 1.0, 0.000000001);
+r.run_dt(2.0 * 86400.0, 1200.0);
+wx.print("TC6 tracer: mass ratio " + str(r.tracer_mass() / mass0) + " mean " + str(r.tracer_mean()) + " range " + str(r.tracer_min()) + " .. " + str(r.tracer_max()));
+wx.assert_close(r.tracer_mass() / mass0, 1.0, 0.0001);
+# stirred by 100 m/s winds without diffusion the spectral tracer overshoots its [0, 2] range by about 0.23 at T21
+wx.assert_true(r.tracer_min() > -0.5 && r.tracer_min() < 0.0 && r.tracer_max() > 2.0 && r.tracer_max() < 2.5);
+end _dsl_
+savedsl(p, out);

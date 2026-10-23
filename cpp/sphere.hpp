@@ -39,9 +39,23 @@ class Sphere {
   void set_state_grid(const std::vector<double> &h, const std::vector<double> &u, const std::vector<double> &v);
   void set_axis_tilt(double alpha);  // tilt the rotation axis by alpha (rad) as in Williamson test cases 2 and 6 setups: f = 2 Omega (-cos lon cos lat sin a + sin lat cos a)
   void set_diffusion(double nu4) { p_.diffusion = nu4; }
-  void mark_reference();  // remember the current height as the reference for height_error_*
+  void mark_reference();  // remember the current height (and tracer) as the reference for *_error_*
   void add_mode(int n, int m, double amplitude, double mean_depth);  // h = mean + amplitude * P_n^m(sin lat) cos(m lon), at rest
   void perturb(double amplitude, uint64_t seed, int max_wave);       // seeded random height field of wavenumbers <= max_wave, zero mean
+
+  // Passive tracer q (any unit) carried by the winds: dq/dt = -v . grad q, spectral like the other fields.
+  void set_tracer_grid(const std::vector<double> &q);
+  bool has_tracer() const { return has_tracer_; }
+  void set_advect_only(bool on) { advect_only_ = on; }  // freeze winds and height: only the tracer evolves (Williamson test case 1)
+  bool advect_only() const { return advect_only_; }
+  std::vector<double> grid_tracer() const;
+  double tracer_mean() const;                 // area mean of q: conserved exactly by non-divergent flow (the advective form)
+  double tracer_mass() const;                 // area mean of h q: what a divergent flow conserves (to quadrature error)
+  double tracer_at(double lat, double lon) const;
+  double tracer_min() const;                  // grid extremes: overshoots of the spectral advection show here
+  double tracer_max() const;
+  double tracer_error_l2() const;             // Williamson normalized errors against the reference tracer
+  double tracer_error_linf() const;
 
   void step(double dt);
   void run(double seconds, double dt);   // splits into equal steps; dt <= 0 picks a stable one
@@ -79,9 +93,11 @@ class Sphere {
   double t_ = 0;
   std::vector<double> mu_, w_;
   std::vector<std::vector<std::vector<double>>> P_, H_;  // [lat][m][n-m]
-  std::vector<cplx> zeta_, delta_, phi_;                  // spectral, index m*(N+1)+n
-  std::vector<double> ref_phi_grid_, f_grid_;  // f_grid_: Coriolis parameter on the grid
+  std::vector<cplx> zeta_, delta_, phi_, q_;              // spectral, index m*(N+1)+n; q_ only with a tracer
+  bool has_tracer_ = false, advect_only_ = false;
+  std::vector<double> ref_phi_grid_, ref_q_grid_, f_grid_;  // f_grid_: Coriolis parameter on the grid
   size_t idx(int m, int n) const { return static_cast<size_t>(m) * (N_ + 1) + n; }
+  void tracer_tendency(const std::vector<cplx> &z, const std::vector<cplx> &d, const std::vector<cplx> &q, std::vector<cplx> &dq) const;
   // grid <-> Fourier at one latitude
   void fourier_forward(const double *row, std::vector<cplx> &fm) const;  // m = 0..N
   void fourier_backward(const std::vector<cplx> &fm, double *row) const;
