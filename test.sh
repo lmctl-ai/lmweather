@@ -130,7 +130,8 @@ expect_error assert_true 'wx.assert_true(false);' "assert_true failed"
 deep="$(printf '(%.0s' $(seq 300))1$(printf ')%.0s' $(seq 300))"
 expect_error deep_expression "let s = wx.sphere(10).fields(\"$deep\", \"0\", \"0\");" "nested too deeply"
 expect_error huge_number 'let s = wx.sphere(10).fields("1e400", "0", "0");' "out of range"
-ok "errors stop with exit 3 and clear messages (29 cases)"
+expect_error nonfinite_result 'let s = wx.sphere(10).fields("0", "0", "0"); let e = s.error_l2();' "not finite"
+ok "errors stop with exit 3 and clear messages (30 cases)"
 
 # Combined pipelines (lmweather simulates, lmplot draws). Need lmplot on PATH, or network for install=.
 if command -v lmplot >/dev/null 2>&1 || [ "${LMWEATHER_TEST_NETWORK:-}" = 1 ]; then
