@@ -1,0 +1,43 @@
+# The equatorial wave guide in motion: a 10 m thermocline bump on the equator (f0 = 0, beta = 2.28e-11, 200 m layer)
+# splits into an eastward equatorial Kelvin wave at c = sqrt(g H) = 44 m/s (crossing 10000 km in 2.6 days, the El Nino
+# messenger) and slower westward Rossby lobes straddling the equator at c/3. 36 frames, 1.5 hours apart.
+# Needs lmplot and ffmpeg. lmweather integrates the linear equatorial beta-plane; lmplot draws the frames.
+mkdir("images");
+mkdir("data");
+mkdir("data/kelvin_frames");
+sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let lx = 24000000.0;
+let ly = 8000000.0;
+let m = wx.plane(160, 64, lx, ly).depth(200.0).coriolis(0.0, 0.0000000000228).linear();
+let c = m.wave_speed();
+m.fields("10.0 * pow(2.718281828459045, -(x - 10000000.0) * (x - 10000000.0) / 1800000000000.0 - (y - ly / 2.0) * (y - ly / 2.0) / 900000000000.0)", "0", "0");
+for (k in range(0, 36)) {
+  m.save_csv("data/kelvin_frames/f" + str(k) + ".csv");
+  m.run(5400.0);
+}
+let h_kelvin = m.h_at(10000000.0 + c * 35.0 * 5400.0, 0.5 * ly) - 200.0;
+wx.print("after 52.5 h the Kelvin crest at x0 + c t is " + str(h_kelvin) + " m high");
+wx.assert_true(h_kelvin > 2.0);
+end _dsl_
+savedsl(sim, "data/kelvin_anim-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl data/kelvin_anim-sim.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.cmd("set pm3d map; unset key; set border 3; set tics nomirror");
+plot.cmd("set palette defined (-1.5 '#2166ac', 0 '#f7f7f7', 2 '#fddbc7', 4.5 '#b2182b'); set cbrange [-1.5:4.5]; set cblabel 'h - H [m]'");
+plot.cmd("set xrange [-9000:12000]; set yrange [-3800:3800]; set xlabel 'x - x_0 [km]'; set ylabel 'y - y_{eq} [km]'");
+for (k in range(0, 36)) {
+  let hours = 1.5 * float(k);
+  plot.png("data/kelvin_frames/f" + str(k) + ".png", 640, 360);
+  plot.cmd("set title 'Equatorial wave guide, hour " + str(hours) + ": Kelvin wave east at c, Rossby lobes west at c/3' font ',10'");
+  plot.cmd("splot 'data/kelvin_frames/f" + str(k) + ".csv' u (($1-10000000.0)/1000.0):(($2-4000000.0)/1000.0):($3-200.0) w pm3d");
+  plot.close();
+}
+end _dsl_
+savedsl(draw, "data/kelvin_anim-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl data/kelvin_anim-draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+r = system ffmpeg -y -loglevel error -framerate 8 -i data/kelvin_frames/f%d.png -vf "split[a][b];[a]palettegen=max_colors=96[p];[b][p]paletteuse=dither=none" images/kelvin_anim.gif;
+assert(r.code == 0, r.stderr);
+println("wrote images/kelvin_anim.gif");

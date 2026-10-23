@@ -211,7 +211,7 @@ if command -v lmplot >/dev/null 2>&1 || [ "${LMWEATHER_TEST_NETWORK:-}" = 1 ]; t
   ng=0
   for src in examples/gallery/*.lms; do
     name="$(basename "$src" .lms)"
-    if [ "$name" = rh_anim ] && ! command -v ffmpeg >/dev/null 2>&1; then echo "note: $name skipped (no ffmpeg on PATH)"; continue; fi
+    case "$name" in *_anim) if ! command -v ffmpeg >/dev/null 2>&1; then echo "note: $name skipped (no ffmpeg on PATH)"; continue; fi;; esac
     timeout 300 "$LMSCRIPT" "$src" >"$WORK/gallery-$name.log" 2>&1 || { cat "$WORK/gallery-$name.log" >&2; fail "gallery example $name"; }
     ng=$((ng+1))
   done

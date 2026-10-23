@@ -42,5 +42,6 @@ wx.assert_close(m.pv_anomaly_rms() / q0, 1.0, 0.001);   # potential vorticity is
 end _dsl_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
-assert(r.code == 0);
+assert(r.code == 0, r.stdout + r.stderr);
+println(r.stdout);
 println(f"wrote {out}");

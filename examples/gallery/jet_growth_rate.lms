@@ -1,0 +1,70 @@
+# Barotropic instability of a Bickley jet u = U sech^2(y/L): Rayleigh's necessary condition (the vorticity gradient
+# -u'' changes sign, at y = +-0.66 L) is met, and linear theory (Lipps 1962; Drazin and Reid) says the sinuous mode is
+# unstable for 0 < kL < 2 and neutral beyond, growing fastest near kL = 0.9 at about 0.14 U/L. Ten channel runs, one per
+# zonal wavenumber, start from a 1 cm/s wiggle; the kinetic energy in that wavenumber (Plane.harmonic_energy, summed
+# over the whole channel so the phase of a single row does not matter) between hour 12 and hour 60 gives 2 sigma.
+# U = 20 m/s, L = 100 km, a 1000 m layer (deformation radius much larger than L, nearly non-divergent), no rotation.
+# lmweather integrates the nonlinear C-grid channel (ten runs in one host call); lmplot draws images/jet_growth_rate.png.
+mkdir("images");
+mkdir("data");
+# kL = m / 4 for zonal wavenumber m = 1 .. 10 in a channel four jet widths long
+sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let pi = 3.141592653589793;
+let L = 100000.0;
+let lx = 2.0 * pi * L * 4.0;
+let ly = 8.0 * L;
+let rows = "";
+for (m in range(1, 11)) {
+  let w = wx.plane(64, 64, lx, ly).depth(1000.0).coriolis(0.0, 0.0).nonlinear();
+  let mm = str(m);
+  w.fields("0", "20.0 * 4.0 / pow(pow(e, (y - ly / 2) / 100000.0) + pow(e, -(y - ly / 2) / 100000.0), 2)", "0.01 * sin(2 * pi * " + mm + " * x / lx) * 4.0 / pow(pow(e, (y - ly / 2) / 100000.0) + pow(e, -(y - ly / 2) / 100000.0), 2)");
+  w.run(12.0 * 3600.0);
+  let e1 = w.harmonic_energy(m);
+  w.run(48.0 * 3600.0);
+  let e2 = w.harmonic_energy(m);
+  rows = rows + mm + " " + str(float(m) / 4.0) + " " + str(e1) + " " + str(e2) + "\n";
+  wx.print("m = " + mm + " (kL = " + str(float(m) / 4.0) + "): wave energy ratio over 48 h " + str(e2 / e1));
+}
+wx.save_text("data/jet_growth.csv", rows);
+end _dsl_
+savedsl(sim, "data/jet_growth_rate-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl data/jet_growth_rate-sim.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+prof = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+# the jet profile and its vorticity gradient -u'' for the Rayleigh panel
+let prof = "";
+for (j in range(0, 161)) {
+  let y = -4.0 + 0.05 * float(j);
+  let ch = (pow(2.718281828459045, y) + pow(2.718281828459045, -y)) / 2.0;
+  let sh = (pow(2.718281828459045, y) - pow(2.718281828459045, -y)) / 2.0;
+  let u = 20.0 / (ch * ch);
+  let upp = 20.0 * (4.0 * sh * sh - 2.0 * ch * ch) / (ch * ch * ch * ch);   # d2/dy2 sech^2 = (4 sinh^2 - 2 cosh^2)/cosh^4
+  prof = prof + str(y) + " " + str(u) + " " + str(-upp) + "\n";
+}
+wx.save_text("data/jet_profile.csv", prof);
+end _dsl_
+savedsl(prof, "data/jet_growth_rate-prof.dslb");
+r = system ${dsl_cli(prof)} --dsl data/jet_growth_rate-prof.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/jet_growth_rate.png", 1000, 480);
+plot.cmd("set multiplot layout 1,2 title 'Bickley jet u = U sech^2(y/L): where it is unstable and how fast (U = 20 m/s, L = 100 km)' font ',13'");
+plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dddddd'; set key top right box opaque");
+plot.cmd("set title 'Rayleigh: -u'' changes sign at y = +-0.66 L' font ',11'");
+plot.cmd("set xlabel 'y / L'; set ylabel 'u [m/s]'; set y2label '-u'' [10^{-9} m^{-1} s^{-1}]'; set xrange [-4:4]; set yrange [-5:22]; set y2range [-3:5]; set y2tics; set ytics nomirror");
+plot.cmd("set arrow 1 from -0.66,-5 to -0.66,22 nohead dt 2 lc rgb '#999999'; set arrow 2 from 0.66,-5 to 0.66,22 nohead dt 2 lc rgb '#999999'");
+plot.cmd("plot 'data/jet_profile.csv' u 1:2 w l lw 2.5 lc rgb '#1f77b4' t 'jet u(y)', '' u 1:($3 / 10000000000.0 * 10.0) axes x1y2 w l lw 2.5 lc rgb '#d62728' t '-u'' (right axis)', 0 axes x1y2 w l lw 1 lc rgb '#999999' notitle");
+plot.cmd("unset arrow 1; unset arrow 2; unset y2label; unset y2tics");
+plot.cmd("set title 'growth rate of the sinuous mode: unstable for kL < 2' font ',11'");
+plot.cmd("set xlabel 'k L'; set ylabel 'growth rate sigma L / U'; set xrange [0:2.75]; set yrange [-0.03:0.2]; set ytics 0.05; unset key");
+plot.cmd("set arrow 3 from 2,-0.03 to 2,0.2 nohead lw 2 dt 2 lc rgb '#d62728'; set label 1 'cutoff kL = 2' at 2.05, 0.17 font ',10' tc rgb '#d62728'");
+plot.cmd("plot 0 w l lw 1 lc rgb '#999999' notitle, 'data/jet_growth.csv' u 2:(0.5 * log($4 / $3) / (48.0 * 3600.0) * 100000.0 / 20.0) w lp lw 2.5 pt 7 ps 1.6 lc rgb '#1f77b4' t 'lmweather: wave energy growth, hours 12 to 60'");
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(draw, "data/jet_growth_rate-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl data/jet_growth_rate-draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/jet_growth_rate.png");

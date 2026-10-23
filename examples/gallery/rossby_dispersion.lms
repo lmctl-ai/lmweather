@@ -1,0 +1,64 @@
+# The Rossby-wave dispersion relation measured: on a mid-latitude beta-plane channel (f0 = 1e-4, beta = 2e-11, H = 1000 m,
+# deformation radius Ld = 990 km) waves of zonal wavenumber 1..7 are launched one at a time and the westward drift of
+# their crests timed over 5 days. The measured phase speeds follow c = -beta / (k^2 + l^2 + 1/Ld^2): long waves move fastest
+# (the Ld term caps the speed at -beta Ld^2 / (1 + l^2 Ld^2)), short waves are nearly stationary, and dropping the free
+# surface (Ld -> infinity, the non-divergent curve) over-predicts the long-wave speed by a factor of two.
+# lmweather integrates the linear C-grid channel; lmplot draws images/rossby_dispersion.png.
+mkdir("images");
+mkdir("data");
+sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let pi = 3.141592653589793;
+let lx = 12000000.0;
+let ly = 3000000.0;
+let beta = 0.00000000002;
+let f0 = 0.0001;
+let probe = wx.plane(240, 30, lx, ly).depth(1000.0).coriolis(f0, beta).linear();
+let ld = probe.rossby_radius();
+let l = pi / ly;
+let rows = "";
+for (m in range(1, 8)) {
+  let k = 2.0 * pi * float(m) / lx;
+  let cp = -beta / (k * k + l * l + 1.0 / (ld * ld));
+  let cnd = -beta / (k * k + l * l);
+  let w = wx.plane(240, 30, lx, ly).depth(1000.0).coriolis(f0, beta).linear();   # 50 km cells: 34+ points per wavelength
+  # quasi-geostrophic wave psi = psi0 cos(kx) sin(ly): h' = f0 psi / g, u = -psi_y, v = psi_x
+  let mm = str(m);
+  w.fields("f0 * 100000.0 * cos(2 * pi * " + mm + " * x / lx) * sin(pi * y / ly) / g", "-100000.0 * pi / ly * cos(2 * pi * " + mm + " * x / lx) * cos(pi * y / ly)", "-100000.0 * 2 * pi * " + mm + " / lx * sin(2 * pi * " + mm + " * x / lx) * sin(pi * y / ly)");
+  let c0 = w.zonal_crest(m, 15);
+  let prev = c0;
+  let total = 0.0;
+  let per = lx / float(m);
+  for (d in range(0, 5)) {                                  # daily increments, unwrapped modulo the wavelength
+    w.run(86400.0);
+    let c = w.zonal_crest(m, 15);
+    let step = c - prev;
+    step = step - floor(step / per + 0.5) * per;
+    total = total + step;
+    prev = c;
+  }
+  let measured = total / (5.0 * 86400.0);
+  rows = rows + str(k * 1000000.0) + " " + str(measured) + " " + str(cp) + " " + str(cnd) + " " + str(lx / float(m) / 1000.0) + "\n";
+  wx.print("m = " + mm + " (wavelength " + str(lx / float(m) / 1000.0) + " km): measured " + str(measured) + " m/s, theory " + str(cp) + " m/s");
+  wx.assert_close(measured / cp, 1.0, 0.05);               # the QG wave is not an exact shallow-water mode: a few % of gravity-wave noise
+}
+wx.save_text("data/rossby_dispersion.csv", rows);
+wx.save_text("data/rossby_params.csv", str(ld) + " " + str(l) + " " + str(beta) + "\n");
+end _dsl_
+savedsl(sim, "data/rossby_dispersion-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl data/rossby_dispersion-sim.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/rossby_dispersion.png", 900, 560);
+plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dddddd'; set key bottom right box opaque");
+plot.cmd("set title 'Rossby-wave dispersion on a beta-plane channel: measured crest speed vs c = -beta / (k^2 + l^2 + 1/L_d^2)'");
+plot.cmd("set xlabel 'zonal wavenumber k [10^{-6} m^{-1}]   (wavelength 12000 km ... 1700 km)'; set ylabel 'westward phase speed c [m/s]'");
+plot.cmd("set xrange [0:4]; set yrange [-10:0.5]");
+plot.cmd("beta = 2e-11; l = pi / 3e6; ld = 990515.0");
+plot.cmd("plot -beta / ((x * 1e-6) ** 2 + l ** 2 + 1.0 / ld ** 2) w l lw 2.5 lc rgb '#1f77b4' t 'shallow-water theory (L_d = 990 km)', -beta / ((x * 1e-6) ** 2 + l ** 2) w l lw 2 dt 2 lc rgb '#999999' t 'non-divergent (L_d -> infinity)', 'data/rossby_dispersion.csv' u 1:2 w p pt 7 ps 1.8 lc rgb '#d62728' t 'lmweather, crest drift over 5 days (m = 1..7)'");
+plot.close();
+end _dsl_
+savedsl(draw, "data/rossby_dispersion-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl data/rossby_dispersion-draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/rossby_dispersion.png");

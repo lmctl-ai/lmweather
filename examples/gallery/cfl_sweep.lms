@@ -1,0 +1,77 @@
+# How large a time step can an explicit spectral model take? RK4 is stable for |omega dt| < 2 sqrt(2), where omega is
+# the fastest gravity wave the truncation resolves, (T/a) sqrt(g h_max) plus the wind and Coriolis terms: 1845 s for the
+# Rossby-Haurwitz state at T21. Below the limit the error against a fine-step reference falls as dt^4 (fourth order);
+# a step above it is refused by the host (an unstable RK4 run returns wrong but finite numbers for a long time).
+# lmweather runs 2 days of test case 6 at eleven step sizes; lmplot draws images/cfl_sweep.png.
+mkdir("images");
+mkdir("data");
+sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let ref = wx.sphere(21).williamson6();
+let limit = ref.stable_dt() * 1.8856180831641;            # stable_dt is 1.5/omega, the RK4 limit 2 sqrt(2)/omega
+wx.print("RK4 limit for this state: " + str(limit) + " s");
+let e0 = ref.energy();
+ref.run_dt(2.0 * 86400.0, 100.0);
+let n = 0;
+let lats = "";
+let rows = "";
+for (i in range(0, 11)) {
+  let dt = 200.0;
+  if (i == 1) { dt = 300.0; }
+  if (i == 2) { dt = 450.0; }
+  if (i == 3) { dt = 600.0; }
+  if (i == 4) { dt = 800.0; }
+  if (i == 5) { dt = 1000.0; }
+  if (i == 6) { dt = 1200.0; }
+  if (i == 7) { dt = 1440.0; }
+  if (i == 8) { dt = 1600.0; }
+  if (i == 9) { dt = 1750.0; }
+  if (i == 10) { dt = 1840.0; }
+  let s = wx.sphere(21).williamson6();
+  s.run_dt(2.0 * 86400.0, dt);
+  # rms height difference against the reference over a 6 x 8 grid of sample points
+  let ss = 0.0;
+  for (j in range(0, 6)) {
+    for (k in range(0, 8)) {
+      let lat = -75.0 + 30.0 * float(j);
+      let lon = 45.0 * float(k);
+      let d = s.height_at(lat, lon) - ref.height_at(lat, lon);
+      ss = ss + d * d;
+    }
+  }
+  let rms = sqrt(ss / 48.0);
+  let drift = abs(s.energy() / e0 - 1.0);
+  rows = rows + str(dt) + " " + str(rms) + " " + str(drift) + "\n";
+  wx.print("dt " + str(dt) + " s: rms height error " + str(rms) + " m, energy drift " + str(drift));
+}
+wx.save_text("data/cfl_sweep.csv", rows);
+wx.save_text("data/cfl_limit.csv", str(limit) + " 0.0001\n" + str(limit) + " 100\n");
+end _dsl_
+savedsl(sim, "data/cfl_sweep-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl data/cfl_sweep-sim.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+# a step above the limit: the host refuses before taking it
+over = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let s = wx.sphere(21).williamson6();
+s.run_dt(86400.0, 2000.0);
+end _dsl_
+savedsl(over, "data/cfl_sweep-over.dslb");
+r = system ${dsl_cli(over)} --dsl data/cfl_sweep-over.dslb;
+assert(r.code != 0, "a 2000 s step should have been refused");
+println("dt = 2000 s: " + r.stdout);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/cfl_sweep.png", 900, 560);
+plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dddddd'; set key top left box opaque");
+plot.cmd("set title 'Time step vs error, Rossby-Haurwitz wave at T21 for 2 days (reference: dt = 100 s)'");
+plot.cmd("set xlabel 'RK4 step dt [s]'; set ylabel 'rms height error against the reference [m]'; set logscale xy");
+plot.cmd("set xrange [150:2500]; set yrange [0.00005:100]; set format y '10^{%T}'; set xtics (200, 300, 500, 1000, 1845)");
+plot.cmd("set label 1 'RK4 limit 2 sqrt(2)/omega = 1845 s: a larger step is refused' at 1800, 4 right font ',10' tc rgb '#d62728'");
+plot.cmd("set label 2 'error ~ dt^4' at 1750, 0.012 right tc rgb '#999999' font ',10'");
+plot.cmd("plot 'data/cfl_limit.csv' u 1:2 w l lw 2 dt 2 lc rgb '#d62728' notitle, 0.0003 * (x / 300.0) ** 4 w l lw 1.5 lc rgb '#bbbbbb' notitle, 'data/cfl_sweep.csv' u 1:2 w lp lw 2.5 pt 7 ps 1.5 lc rgb '#1f77b4' t 'rms height error (fourth-order convergence)', '' u 1:($3 * 1000000.0) w lp lw 2 pt 5 ps 1.2 lc rgb '#ff7f0e' t 'energy drift |E/E_0 - 1| x 10^6'");
+plot.close();
+end _dsl_
+savedsl(draw, "data/cfl_sweep-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl data/cfl_sweep-draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/cfl_sweep.png");

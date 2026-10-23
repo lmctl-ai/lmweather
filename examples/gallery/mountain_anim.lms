@@ -1,0 +1,38 @@
+# Williamson test case 5 in motion: a 20 m/s zonal flow hits a 2000 m conical mountain at 270 E 30 N; over 15 days the
+# free surface develops a lee trough and a wave train that wraps around the hemisphere. 45 frames, 8 hours apart, T42.
+# Needs lmplot and ffmpeg. lmweather integrates the spectral model with orography; lmplot draws the frames.
+mkdir("images");
+mkdir("data");
+mkdir("data/mountain_frames");
+sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let s = wx.sphere(42).williamson5();
+let m0 = s.mean_height();
+for (k in range(0, 45)) {
+  s.save_csv("data/mountain_frames/f" + str(k) + ".csv");
+  s.run_dt(28800.0, 900.0);
+}
+wx.assert_close(s.mean_height(), m0, 0.000000001);
+wx.print("day 15: max wind " + str(s.max_wind()) + " m/s");
+end _dsl_
+savedsl(sim, "data/mountain_anim-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl data/mountain_anim-sim.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.cmd("set pm3d map; unset key; set palette rgbformulae 33,13,10; set cbrange [5000:6000]; set cblabel 'free surface [m]'");
+plot.cmd("set xrange [0:360]; set yrange [-90:90]; set xtics 60; set ytics 30; set xlabel 'longitude [deg]'; set ylabel 'latitude [deg]'");
+plot.cmd("set contour base; set cntrparam levels discrete 500, 1500; unset clabel");
+for (k in range(0, 45)) {
+  let day = float(k) / 3.0;
+  plot.png("data/mountain_frames/f" + str(k) + ".png", 640, 360);
+  plot.cmd("set title sprintf('Flow over an isolated mountain (Williamson 5), day %.1f', " + str(day) + ")");
+  plot.cmd("splot 'data/mountain_frames/f" + str(k) + ".csv' u 1:2:($3+$8) w pm3d, '' u 1:2:8 w lines nosurface lc rgb 'black' lw 1.5");
+  plot.close();
+}
+end _dsl_
+savedsl(draw, "data/mountain_anim-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl data/mountain_anim-draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+r = system ffmpeg -y -loglevel error -framerate 9 -i data/mountain_frames/f%d.png -vf "split[a][b];[a]palettegen=max_colors=96[p];[b][p]paletteuse=dither=none" images/mountain_anim.gif;
+assert(r.code == 0, r.stderr);
+println("wrote images/mountain_anim.gif");

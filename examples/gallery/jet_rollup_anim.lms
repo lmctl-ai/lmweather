@@ -1,0 +1,42 @@
+# Barotropic jet instability in motion: a 55 m/s westerly jet on a nonlinear beta-plane channel, perturbed by a
+# wavenumber-2 wiggle, meanders, breaks and rolls its vorticity strip into paired cyclones and anticyclones over
+# 3.5 days. 42 frames, 2 hours apart (the still picture in jet_instability.lms is the last frame).
+# Needs lmplot and ffmpeg. lmweather integrates the nonlinear C-grid channel; lmplot draws the frames.
+mkdir("images");
+mkdir("data");
+mkdir("data/jet_frames");
+sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let lx = 6000000.0;
+let ly = 3000000.0;
+let m = wx.plane(120, 60, lx, ly).depth(5000.0).coriolis(0.0001, 0.000000000015).nonlinear().viscosity(6000.0);
+m.fields("-85.0 * (pow(2.718281828459045, (y - ly / 2.0) / 150000.0) - 1.0) / (pow(2.718281828459045, (y - ly / 2.0) / 150000.0) + 1.0)", "55.0 * pow(2.718281828459045, -(y - ly / 2.0) * (y - ly / 2.0) / 65000000000.0)", "6.0 * sin(4.0 * pi * x / lx) * pow(2.718281828459045, -(y - ly / 2.0) * (y - ly / 2.0) / 80000000000.0)");
+let d0 = m.mean_depth();
+for (k in range(0, 42)) {
+  m.save_csv("data/jet_frames/f" + str(k) + ".csv");
+  m.run(7200.0);
+}
+wx.assert_close(m.mean_depth(), d0, 0.000001);
+wx.print("day 3.5: max speed " + str(m.max_speed()) + " m/s");
+end _dsl_
+savedsl(sim, "data/jet_rollup_anim-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl data/jet_rollup_anim-sim.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.cmd("set border 3; set tics nomirror; unset key");
+plot.cmd("set palette defined (-22 '#2166ac', -8 '#67a9cf', 0 '#f7f7f7', 8 '#ef8a62', 22 '#b2182b'); set cbrange [-22:22]; set cblabel 'zeta [10^{-5} s^{-1}]'");
+plot.cmd("set xrange [0:6000]; set yrange [0:3000]; set xlabel 'x [km]'; set ylabel 'y [km]'");
+for (k in range(0, 42)) {
+  let hours = 2 * k;
+  plot.png("data/jet_frames/f" + str(k) + ".png", 640, 360);
+  plot.cmd("set title 'Jet instability and vortex roll-up: relative vorticity, hour " + str(hours) + "'");
+  plot.cmd("plot 'data/jet_frames/f" + str(k) + ".csv' u ($1/1000.0):($2/1000.0):($6*100000.0) with image");
+  plot.close();
+}
+end _dsl_
+savedsl(draw, "data/jet_rollup_anim-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl data/jet_rollup_anim-draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+r = system ffmpeg -y -loglevel error -framerate 8 -i data/jet_frames/f%d.png -vf "split[a][b];[a]palettegen=max_colors=96[p];[b][p]paletteuse=dither=none" images/jet_rollup_anim.gif;
+assert(r.code == 0, r.stderr);
+println("wrote images/jet_rollup_anim.gif");

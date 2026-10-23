@@ -1,0 +1,67 @@
+# Williamson test case 1: a 1000 m cosine bell is carried once around the globe over the poles in 12 days by solid-body
+# rotation (prescribed winds, advect-only). The exact answer is the initial field. Spectral advection moves the bell
+# without distortion (normalized l2 against the truncated bell 3e-4 at T42 after 12 days); what the truncation cannot do
+# is represent the bell's edge: the ringing (undershoot -12 m at T21, -3.2 m at T42, -1.4 m at T63) is the real error.
+# lmweather integrates the tracer at T21, T42 and T63; lmplot draws images/williamson1_advection.png.
+mkdir("images");
+mkdir("data");
+sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let pi = 3.141592653589793;
+let al = pi / 2.0 - 0.05;                                  # over the poles, the hardest orientation for a lat-lon grid
+let s = wx.sphere(42).williamson1(al);
+let c0 = s.tracer_at(0.0, 270.0);
+s.save_csv("data/tc1_day0.csv");
+let errs = "0 0 0\n";
+for (k in range(1, 49)) {                                  # 6-hour samples of the error norms over 12 days
+  s.run_dt(21600.0, 1800.0);
+  errs = errs + str(0.25 * float(k)) + " " + str(s.tracer_error_l2()) + " " + str(s.tracer_error_linf()) + "\n";
+  if (k == 24) { s.save_csv("data/tc1_day6.csv"); }
+}
+s.save_csv("data/tc1_day12.csv");
+wx.save_text("data/tc1_errors.csv", errs);
+wx.print("T42 day 12: l2 " + str(s.tracer_error_l2()) + " linf " + str(s.tracer_error_linf()) + " centre " + str(s.tracer_at(0.0, 270.0)) + " (started " + str(c0) + ")");
+wx.assert_true(s.tracer_error_l2() < 0.001);
+wx.assert_close(s.tracer_at(0.0, 270.0), c0, 0.1);
+# resolution: representation of the bell (undershoot, peak) and the 12-day error at T21, T42, T63
+let table = "";
+for (i in range(0, 3)) {
+  let T = 21; let dt = 3600.0;
+  if (i == 1) { T = 42; dt = 1800.0; }
+  if (i == 2) { T = 63; dt = 3600.0; }                     # half the RK4 limit for the winds alone (7400 s)
+  let r = wx.sphere(T).williamson1(al);
+  let under = r.tracer_min();
+  let peak = r.tracer_max();
+  r.run_dt(12.0 * 86400.0, dt);
+  table = table + str(T) + " " + str(r.tracer_error_l2()) + " " + str(r.tracer_error_linf()) + " " + str(-under) + " " + str(1000.0 - peak) + "\n";
+  wx.print("T" + str(T) + ": undershoot " + str(under) + " m, peak " + str(peak) + " m, 12-day l2 " + str(r.tracer_error_l2()));
+}
+wx.save_text("data/tc1_resolution.csv", table);
+end _dsl_
+savedsl(sim, "data/williamson1_advection-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl data/williamson1_advection-sim.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/williamson1_advection.png", 1000, 720);
+plot.cmd("set multiplot layout 2,2 title 'Williamson test case 1: cosine bell advected over the poles (T42, 12 days)' font ',13'");
+plot.cmd("set pm3d map; set palette defined (0 '#f7f7f7', 0.001 '#deebf7', 0.5 '#6baed6', 1 '#08306b'); unset key");
+plot.cmd("set xrange [0:360]; set yrange [-90:90]; set cbrange [0:1000]; set xtics 90; set ytics 45; set cblabel 'tracer [m]'");
+plot.cmd("set xlabel 'longitude [deg]'; set ylabel 'latitude [deg]'");
+plot.cmd("set title 'day 0: bell at 270 E on the equator'");
+plot.cmd("splot 'data/tc1_day0.csv' u 1:2:7 w pm3d");
+plot.cmd("set title 'day 6: carried over the pole to the antipode (90 E)'");
+plot.cmd("splot 'data/tc1_day6.csv' u 1:2:7 w pm3d");
+plot.cmd("set title 'day 12: back where it started, same shape (l2 3e-4)'");
+plot.cmd("splot 'data/tc1_day12.csv' u 1:2:7 w pm3d");
+plot.cmd("unset pm3d; set border 3; set tics nomirror; set grid lc rgb '#dddddd'; set key top left box opaque; unset cblabel");
+plot.cmd("set title 'resolution: edge ringing (representation) vs 12-day transport error'");
+plot.cmd("set xlabel 'triangular truncation T'; set ylabel 'fraction of the 1000 m bell'; set logscale y; set format y '10^{%T}'");
+plot.cmd("set xrange [15:70]; set xtics (21,42,63); set yrange [0.0001:0.1]");
+plot.cmd("plot 'data/tc1_resolution.csv' u 1:($4/1000.0) w lp lw 2.5 pt 7 ps 1.4 lc rgb '#d62728' t 'undershoot below zero', '' u 1:($5/1000.0) w lp lw 2.5 pt 9 ps 1.4 lc rgb '#ff7f0e' t 'peak clipped', '' u 1:2 w lp lw 2.5 pt 5 ps 1.4 lc rgb '#1f77b4' t 'normalized l2 after 12 days'");
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(draw, "data/williamson1_advection-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl data/williamson1_advection-draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/williamson1_advection.png");

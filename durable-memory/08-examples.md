@@ -22,4 +22,13 @@ so `lmctl autorun <raw github url>` produces the output, not just bytecode. READ
   Rossby geostrophic adjustment against the Fourier-cosine potential-vorticity prediction, beta-plane Rossby wave westward phase drift,
   D'Alembert shallow-water gravity wave splitting and space-time Hovmoller cone, Williamson test case 2 cross-polar tilted geostrophic
   flow, planetary rotation and Rhines-scale banded jets (`wx.planet`), and spherical-harmonic Laplace tidal eigenfrequencies.
-- `test.sh` checks README images (magic bytes, sizes) and runs the gallery when `lmplot` is available (GIF only with `ffmpeg`).
+- Second set (20 gallery examples in all), grouped in the README by theme: Williamson TC1 bell advection at three truncations
+  (`tracer`, `advect_only`; the error is edge ringing, not transport), TC5 mountain flow still and 45-frame GIF (`orography`),
+  RK4 step sweep (dt^4 error, refused step above 2 sqrt(2)/omega), channel jet roll-up GIF, Bickley jet growth rate per
+  wavenumber (`Plane.harmonic_energy`, Lipps 1962 cutoff kL = 2), decaying turbulence n^-3 spectrum (`save_spectrum`),
+  Rossby dispersion relation measured for m = 1..7, adjustment width study L/Ld = 0.25..4, equatorial Kelvin GIF.
+- `test.sh` checks README images (magic bytes, sizes) and runs the gallery when `lmplot` is available (`*_anim` only with `ffmpeg`).
+- The five plain `examples/*.lms` capture the host's stdout (`r = system ...`) and echo it, so `lmctl autorun` shows the
+  checked numbers; without the echo a first-time visitor saw only "wrote build/x.dslb".
+- Figure hygiene learned the hard way: multiplot panel titles above ~55 characters clip at 1000 px; keys with long
+  entries overflow a half-width panel (shorten the titles, or `set key below`); check every PNG and a late GIF frame.

@@ -20,5 +20,6 @@ s.save_csv("build/examples/williamson2_day5.csv");
 end _dsl_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
-assert(r.code == 0);
+assert(r.code == 0, r.stdout + r.stderr);
+println(r.stdout);
 println(f"wrote {out}");

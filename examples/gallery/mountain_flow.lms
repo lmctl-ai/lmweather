@@ -1,0 +1,54 @@
+# Williamson test case 5: a 20 m/s zonal flow meets an isolated 2000 m conical mountain at 30 N. The mountain forces a
+# wave train downstream (the shallow-water version of lee-side planetary waves): the free surface h + hs develops a trough
+# east of the ridge, the vorticity field a lee anticyclone/cyclone pair, and winds double to 42 m/s, while mass is exact
+# and energy and potential enstrophy are conserved to 1e-7 over 15 days at T42.
+# lmweather integrates the spectral model with orography; lmplot draws images/mountain_flow.png.
+mkdir("images");
+mkdir("data");
+sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let s = wx.sphere(42).williamson5();
+let m0 = s.mean_height();
+let e0 = s.energy();
+let q0 = s.enstrophy();
+let log = "0 0 0 0 " + str(s.max_wind()) + "\n";
+for (d in range(1, 16)) {
+  s.run_dt(86400.0, 900.0);
+  log = log + str(d) + " " + str((s.mean_height() / m0 - 1.0) * 1000000000.0) + " " + str((s.energy() / e0 - 1.0) * 10000000.0) + " " + str((s.enstrophy() / q0 - 1.0) * 10000000.0) + " " + str(s.max_wind()) + "\n";
+}
+wx.save_text("data/tc5_conservation.csv", log);
+s.save_csv("data/tc5_day15.csv");
+wx.print("TC5 day 15: energy change " + str(s.energy() / e0 - 1.0) + ", enstrophy change " + str(s.enstrophy() / q0 - 1.0) + ", max wind " + str(s.max_wind()) + " m/s");
+wx.assert_close(s.mean_height(), m0, 0.000000001);
+wx.assert_close(s.energy() / e0, 1.0, 0.000001);
+wx.assert_true(s.max_wind() > 35.0);
+end _dsl_
+savedsl(sim, "data/mountain_flow-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl data/mountain_flow-sim.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/mountain_flow.png", 1000, 720);
+plot.cmd("set multiplot layout 2,2 title 'Williamson test case 5: zonal flow over an isolated mountain, day 15 (T42)' font ',13'");
+plot.cmd("set pm3d map; unset key; set xrange [0:360]; set yrange [-90:90]; set xtics 90; set ytics 45");
+plot.cmd("set xlabel 'longitude [deg]'; set ylabel 'latitude [deg]'");
+plot.cmd("set palette rgbformulae 33,13,10; set cbrange [5000:6000]; set cblabel 'free surface h + h_s [m]'");
+plot.cmd("set title 'h + h_s: lee trough and wave train east of the cone'");
+plot.cmd("set contour base; set cntrparam levels discrete 500, 1500; unset clabel");
+plot.cmd("splot 'data/tc5_day15.csv' u 1:2:($3+$8) w pm3d, '' u 1:2:8 w lines nosurface lc rgb 'black' lw 1.5");
+plot.cmd("unset contour");
+plot.cmd("set palette defined (-6 '#2166ac', 0 '#f7f7f7', 6 '#b2182b'); set cbrange [-6:6]; set cblabel 'relative vorticity [10^{-5} s^{-1}]'");
+plot.cmd("set title 'vorticity: lee vortex pair, gravity waves elsewhere'");
+plot.cmd("set contour base; set cntrparam levels discrete 500, 1500");
+plot.cmd("splot 'data/tc5_day15.csv' u 1:2:($6*100000.0) w pm3d, '' u 1:2:8 w lines nosurface lc rgb 'black' lw 1.5");
+plot.cmd("unset contour; unset pm3d; unset cblabel; set border 3; set tics nomirror; set grid lc rgb '#dddddd'; set key top left box opaque");
+plot.cmd("set title 'conservation over 15 days'; set xlabel 'day'; set ylabel 'relative change [10^{-7}]'; set xrange [0:15]; set yrange [-10:10]; set xtics 3; set ytics 5");
+plot.cmd("plot 'data/tc5_conservation.csv' u 1:2 w l lw 2.5 lc rgb '#2ca02c' t 'mass (x 10^{-9}): exact', '' u 1:3 w l lw 2.5 lc rgb '#1f77b4' t 'energy', '' u 1:4 w l lw 2.5 lc rgb '#d62728' t 'potential enstrophy'");
+plot.cmd("set title 'strongest wind: the mountain accelerates the flow'; set ylabel 'max |v| [m/s]'; set yrange [15:45]; set ytics 5; unset key");
+plot.cmd("plot 'data/tc5_conservation.csv' u 1:5 w lp lw 2.5 pt 7 lc rgb '#9467bd'");
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(draw, "data/mountain_flow-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl data/mountain_flow-draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/mountain_flow.png");
