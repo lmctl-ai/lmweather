@@ -1,0 +1,42 @@
+# Barotropic Bickley-jet instability and Kelvin-Helmholtz / Rossby vortex roll-up on a nonlinear beta-plane channel:
+# a narrow 50 m/s westerly jet in geostrophic balance with a 1000 m height drop across the channel is perturbed by a
+# wavenumber-2 sinusoidal wave; shear instability rolls the vorticity strip into paired cyclonic and anticyclonic vortices.
+# lmweather integrates the nonlinear C-grid shallow-water equations; lmplot draws images/jet_instability.png.
+mkdir("images");
+mkdir("data");
+sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let lx = 6000000.0;
+let ly = 3000000.0;
+let m = wx.plane(120, 60, lx, ly).depth(5000.0).coriolis(0.0001, 0.000000000015).nonlinear().viscosity(6000.0);
+# Geostrophically balanced Bickley/Gaussian jet u(y) at y = ly/2 with a wave-2 meridional velocity perturbation
+m.fields("-85.0 * (pow(2.718281828459045, (y - ly / 2.0) / 150000.0) - 1.0) / (pow(2.718281828459045, (y - ly / 2.0) / 150000.0) + 1.0)", "55.0 * pow(2.718281828459045, -(y - ly / 2.0) * (y - ly / 2.0) / 65000000000.0)", "6.0 * sin(4.0 * pi * x / lx) * pow(2.718281828459045, -(y - ly / 2.0) * (y - ly / 2.0) / 80000000000.0)");
+let d0 = m.mean_depth();
+m.run(3.5 * 86400.0);
+m.save_csv("data/jet_rollup.csv");
+let vmax = 0.0;
+for (i in range(0, 60)) {
+  let v = abs(m.v_at((float(i) + 0.5) * lx / 60.0, 0.5 * ly));
+  if (v > vmax) { vmax = v; }
+}
+wx.print("day 3.5 max |v| on jet axis: " + str(vmax) + " m/s");
+wx.assert_close(m.mean_depth(), d0, 0.000001);
+wx.assert_true(vmax > 12.0);
+end _dsl_
+savedsl(sim, "data/jet_instability-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl data/jet_instability-sim.dslb;
+assert(r.code == 0);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/jet_instability.png", 900, 520);
+plot.cmd("set border 3; set tics nomirror; unset key");
+plot.cmd("set palette defined (-22 '#2166ac', -8 '#67a9cf', 0 '#f7f7f7', 8 '#ef8a62', 22 '#b2182b')");
+plot.cmd("set xrange [0:6000]; set yrange [0:3000]; set cbrange [-22:22]; set cblabel 'zeta [10^{-5} s^{-1}]'");
+plot.cmd("set title 'Nonlinear Bickley-jet instability at day 3.5: relative vorticity roll-up [10^{-5} s^{-1}]'");
+plot.cmd("set xlabel 'x [km]'; set ylabel 'y [km]'");
+plot.cmd("plot 'data/jet_rollup.csv' using ($1/1000.0):($2/1000.0):($6*100000.0) with image notitle");
+plot.close();
+end _dsl_
+savedsl(draw, "data/jet_instability-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl data/jet_instability-draw.dslb;
+assert(r.code == 0);
+println("wrote images/jet_instability.png");

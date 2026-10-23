@@ -1,0 +1,44 @@
+# Planetary rotation & Rhines scale (wx.planet): comparing seeded shallow-water vortex evolution on a slow rotator
+# (0.5x Earth Omega, broad Rhines arrest scale L_beta = sqrt(U/beta)) vs a fast-rotating giant planet (4x Earth Omega,
+# small Rhines scale). Fast rotation arrests meridional eddy motion and organizes flow into narrow zonal bands.
+# lmweather integrates both planetary spheres at T42; lmplot draws images/planetary_jets.png.
+mkdir("images");
+mkdir("data");
+sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let a = 6371220.0;
+let g = 9.80616;
+let om_earth = 0.00007292115;
+
+let slow = wx.planet(42, a, 0.5 * om_earth, g).diffusion(200000000000000.0);
+slow.fields("8000.0", "25.0 * cos(3.0 * lat) * cos(lat)", "0").perturb(120.0, 42, 14);
+let m_slow = slow.mean_height();
+slow.run_dt(5.0 * 86400.0, 900.0);
+slow.save_zonal_mean("data/planet_slow_zonal.csv");
+wx.assert_close(slow.mean_height(), m_slow, 0.000001);
+
+let fast = wx.planet(42, a, 4.0 * om_earth, g).diffusion(200000000000000.0);
+fast.fields("8000.0", "25.0 * cos(6.0 * lat) * cos(lat)", "0").perturb(120.0, 42, 14);
+let m_fast = fast.mean_height();
+fast.run_dt(5.0 * 86400.0, 600.0);
+fast.save_csv("data/planet_fast_map.csv");
+fast.save_zonal_mean("data/planet_fast_zonal.csv");
+wx.assert_close(fast.mean_height(), m_fast, 0.000001);
+wx.assert_true(fast.max_wind() > 15.0);
+end _dsl_
+savedsl(sim, "data/planetary_jets-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl data/planetary_jets-sim.dslb;
+assert(r.code == 0);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/planetary_jets.png", 920, 480);
+plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dddddd'");
+plot.cmd("set title 'Planetary rotation and Rhines scale: zonal-mean wind profiles u(lat) at day 5'");
+plot.cmd("set xlabel 'latitude [deg]'; set ylabel 'zonal-mean wind u [m/s]'");
+plot.cmd("set xrange [-90:90]; set xtics 30; set yrange [-30:35]; set key top right box opaque");
+plot.cmd("plot 0 w l lw 1 lc rgb '#999999' notitle, 'data/planet_slow_zonal.csv' u 1:3 w l lw 2.8 lc rgb '#1f77b4' t 'slow rotator (0.5 Omega_E): 3 broad jets', 'data/planet_fast_zonal.csv' u 1:3 w l lw 2.8 lc rgb '#d62728' t 'fast rotator (4.0 Omega_E): 6 banded jets'");
+plot.close();
+end _dsl_
+savedsl(draw, "data/planetary_jets-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl data/planetary_jets-draw.dslb;
+assert(r.code == 0);
+println("wrote images/planetary_jets.png");

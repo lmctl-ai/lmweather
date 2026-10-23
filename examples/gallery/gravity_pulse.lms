@@ -1,0 +1,61 @@
+# D'Alembert gravity wave splitting and space-time Hovmoller diagram: a 1 m Gaussian free-surface pulse on a
+# 100 m deep channel splits into two 0.5 m pulses racing east and west at c = sqrt(g H) = 31.3 m/s, wrapping around
+# the periodic domain and colliding at the antipode.
+# lmweather integrates the shallow-water channel; lmplot draws images/gravity_pulse.png.
+mkdir("images");
+mkdir("data");
+sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let lx = 4000000.0;
+let nx = 200;
+let m = wx.plane(nx, 6, lx, 60000.0).depth(100.0).linear();
+m.fields("pow(2.718281828459045, -(x - lx / 2) * (x - lx / 2) / 14000000000.0)", "0", "0");
+let c = m.wave_speed();
+wx.print("shallow-water gravity speed c = " + str(c) + " m/s");
+let hov = "";
+for (step in range(0, 65)) {
+  let t_hr = float(step) * 1200.0 / 3600.0;
+  for (i in range(0, nx)) {
+    let x = (float(i) + 0.5) * lx / float(nx);
+    let h = m.h_at(x, 30000.0) - 100.0;
+    hov = hov + str(x / 1000.0) + " " + str(t_hr) + " " + str(h) + "\n";
+  }
+  hov = hov + "\n";
+  if (step == 0) { m.save_row(3, "data/pulse_t0.csv"); }
+  if (step == 10) { m.save_row(3, "data/pulse_t1.csv"); }
+  if (step == 20) { m.save_row(3, "data/pulse_t2.csv"); }
+  if (step == 25) {
+    let best = 0.0; let at = 0.0;
+    for (i in range(100, nx)) {
+      let x = (float(i) + 0.5) * lx / float(nx);
+      let hh = m.h_at(x, 30000.0) - 100.0;
+      if (hh > best) { best = hh; at = x; }
+    }
+    wx.assert_close(at - 0.5 * lx, c * 30000.0, 25000.0);
+    wx.assert_close(best, 0.5, 0.02);
+  }
+  m.run(1200.0);
+}
+wx.save_text("data/pulse_hov.csv", hov);
+end _dsl_
+savedsl(sim, "data/gravity_pulse-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl data/gravity_pulse-sim.dslb;
+assert(r.code == 0);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/gravity_pulse.png", 920, 480);
+plot.cmd("set multiplot layout 1,2");
+plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dddddd'");
+plot.cmd("set title 'D Alembert splitting: 1 m pulse -> two 0.5 m waves'; set xlabel 'x [km]'; set ylabel 'h - H [m]'");
+plot.cmd("set xrange [0:4000]; set yrange [-0.05:1.08]; set key top right box opaque");
+plot.cmd("plot 'data/pulse_t0.csv' u ($1/1000.0):($2-100.0) w l lw 2.4 lc rgb '#1f77b4' t 't = 0 h', 'data/pulse_t1.csv' u ($1/1000.0):($2-100.0) w l lw 2.4 lc rgb '#2ca02c' t 't = 3.3 h', 'data/pulse_t2.csv' u ($1/1000.0):($2-100.0) w l lw 2.4 lc rgb '#d62728' t 't = 6.7 h'");
+plot.cmd("set title 'Space-time Hovmoller (c = 31.3 m/s)'; set xlabel 'x [km]'; set ylabel 'time [hours]'");
+plot.cmd("set xrange [0:4000]; set yrange [0:21.3]; unset key; set palette defined (0 '#f7fbff', 0.15 '#6baed6', 0.45 '#08519c', 0.9 '#800026')");
+plot.cmd("set cbrange [0:0.8]; unset colorbox");
+plot.cmd("plot 'data/pulse_hov.csv' u 1:2:3 with image notitle");
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(draw, "data/gravity_pulse-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl data/gravity_pulse-draw.dslb;
+assert(r.code == 0);
+println("wrote images/gravity_pulse.png");

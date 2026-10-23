@@ -1,5 +1,6 @@
 # Rossby adjustment in a channel: a height bump releases gravity waves and settles into geostrophic balance, with the
 # final profile predicted by conservation of potential vorticity.
+mkdir("build/examples");
 out = ARGV.len() > 0 ? ARGV[0] : "build/geostrophic_adjustment.dslb";
 p = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 let pi = 3.141592653589793;
@@ -40,3 +41,6 @@ wx.assert_close(avg, pred, 0.01);
 wx.assert_close(m.pv_anomaly_rms() / q0, 1.0, 0.001);   # potential vorticity is conserved
 end _dsl_
 savedsl(p, out);
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+println(f"wrote {out}");

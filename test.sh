@@ -133,16 +133,45 @@ expect_error huge_number 'let s = wx.sphere(10).fields("1e400", "0", "0");' "out
 expect_error nonfinite_result 'let s = wx.sphere(10).fields("0", "0", "0"); let e = s.error_l2();' "not finite"
 ok "errors stop with exit 3 and clear messages (30 cases)"
 
-# Combined pipelines (lmweather simulates, lmplot draws). Need lmplot on PATH, or network for install=.
+# README gallery: every linked example and image exists, images are valid PNG/GIF within the size limits.
+magic_ok() { # file
+  case "$1" in
+    *.png) [ "$(head -c 8 "$1" | od -An -tx1 | tr -d ' \n')" = "89504e470d0a1a0a" ];;
+    *.gif) [ "$(head -c 4 "$1")" = "GIF8" ];;
+    *) return 1;;
+  esac
+}
+nimg=0
+for img in $(grep -o 'docs/images/[A-Za-z0-9_.-][A-Za-z0-9_.-]*' README.md | sort -u); do
+  [ -f "$img" ] || fail "README references missing image $img"
+  magic_ok "$img" || fail "$img is not a valid PNG/GIF"
+  size=$(wc -c <"$img" | tr -d ' ')
+  case "$img" in *.gif) limit=3000000;; *) limit=300000;; esac
+  [ "$size" -le "$limit" ] || fail "$img is $size bytes (limit $limit)"
+  nimg=$((nimg+1))
+done
+[ "$nimg" -ge 6 ] || fail "README gallery shows only $nimg images"
+for ex in $(grep -o '(examples/[A-Za-z0-9_/.-]*\.lms)' README.md | tr -d '()' | sort -u); do
+  [ -f "$ex" ] || fail "README links missing example $ex"
+done
+ok "README gallery: $nimg images valid and within size limits, every linked example exists"
+
+# Gallery examples: lmweather computes, lmplot draws (needs lmplot on PATH, or network for install=; the GIF needs ffmpeg).
 if command -v lmplot >/dev/null 2>&1 || [ "${LMWEATHER_TEST_NETWORK:-}" = 1 ]; then
-  for name in rh_wave_plot rossby_wave_plot; do
-    rm -f "build/examples/$name.png"
-    "$LMSCRIPT" "examples/combo/$name.lms" >"$WORK/combo-$name.log" 2>&1 || { cat "$WORK/combo-$name.log" >&2; fail "combo example $name"; }
-    [ -s "build/examples/$name.png" ] || fail "combo example $name wrote no PNG"
+  ng=0
+  for src in examples/gallery/*.lms; do
+    name="$(basename "$src" .lms)"
+    if [ "$name" = rh_anim ] && ! command -v ffmpeg >/dev/null 2>&1; then echo "note: $name skipped (no ffmpeg on PATH)"; continue; fi
+    timeout 300 "$LMSCRIPT" "$src" >"$WORK/gallery-$name.log" 2>&1 || { cat "$WORK/gallery-$name.log" >&2; fail "gallery example $name"; }
+    ng=$((ng+1))
   done
-  ok "lmweather + lmplot pipelines draw the Rossby-Haurwitz wave and the beta-plane Rossby wave"
+  for img in images/*.png images/*.gif; do
+    [ -s "$img" ] || continue
+    magic_ok "$img" || fail "$img is not a valid PNG/GIF"
+  done
+  ok "$ng gallery examples run and wrote valid images (docs/images are refreshed by examples/render-all.sh)"
 else
-  ok "combo examples skipped (no lmplot, LMWEATHER_TEST_NETWORK unset)"
+  ok "gallery examples skipped (no lmplot on PATH, LMWEATHER_TEST_NETWORK unset): docs/images not regenerated"
 fi
 
 # Dry run loads/verifies bytecode without executing the simulation or writing CSV.

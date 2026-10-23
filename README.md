@@ -1,10 +1,18 @@
 # lmweather
 
-**Idealized weather and climate dynamics for lmscript in one static executable: rotating shallow water on the sphere
-(spectral transform method, Williamson test cases) and on a beta-plane (C-grid finite differences) with seeded,
-deterministic runs and CSV output.** It is a scripting host, not a command-line tool: write an
-[lmscript](https://lmctl.com/tools/lmscript/skill.html) `_dsl_` block, compile it, run it with `lmweather --dsl`.
-No Fortran, no NetCDF, no MPI, no data files, no shared libraries. (It is not WRF; see *Scope*.)
+**Idealized weather and climate dynamics for lmscript in one static executable: rotating shallow water on the sphere (spectral transform method, Williamson test cases) and on a beta-plane (C-grid finite differences).**
+
+| | | |
+| :---: | :---: | :---: |
+| <img src="docs/images/rh_anim.gif" width="300"><br>[Rossby-Haurwitz wave 4 drifting east, animated](examples/gallery/rh_anim.lms)<br><sub><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/rh_anim.lms</code></sub> | <img src="docs/images/jet_instability.png" width="300"><br>[Mid-latitude jet instability and vortex roll-up](examples/gallery/jet_instability.lms)<br><sub><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/jet_instability.lms</code></sub> | <img src="docs/images/equatorial_kelvin.png" width="300"><br>[Equatorial Kelvin wave and off-equatorial Rossby lobes](examples/gallery/equatorial_kelvin.lms)<br><sub><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/equatorial_kelvin.lms</code></sub> |
+| <img src="docs/images/rossby_haurwitz.png" width="300"><br>[Williamson TC6 wave 4 on a T42 Gaussian grid](examples/gallery/rossby_haurwitz.lms)<br><sub><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/rossby_haurwitz.lms</code></sub> | <img src="docs/images/geostrophic_adjustment.png" width="300"><br>[Rossby geostrophic adjustment and balanced jets](examples/gallery/geostrophic_adjustment.lms)<br><sub><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/geostrophic_adjustment.lms</code></sub> | <img src="docs/images/rossby_wave.png" width="300"><br>[Westward Rossby wave dispersion on a beta-plane](examples/gallery/rossby_wave.lms)<br><sub><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/rossby_wave.lms</code></sub> |
+| <img src="docs/images/gravity_pulse.png" width="300"><br>[Shallow-water gravity pulse and Hovmoller cone](examples/gallery/gravity_pulse.lms)<br><sub><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/gravity_pulse.lms</code></sub> | <img src="docs/images/williamson2.png" width="300"><br>[Williamson TC2 cross-polar tilted geostrophic flow](examples/gallery/williamson2.lms)<br><sub><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/williamson2.lms</code></sub> | <img src="docs/images/planetary_jets.png" width="300"><br>[Planetary rotation and Rhines-scale banded jets](examples/gallery/planetary_jets.lms)<br><sub><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/planetary_jets.lms</code></sub> |
+
+Each command runs the example from any empty directory: lmweather integrates the dynamical core, [lmplot](https://github.com/lmctl-ai/lmplot)
+draws, and the picture lands in `images/`. `examples/render-all.sh` regenerates `docs/images/` from a checkout.
+
+It is a scripting host, not a command-line tool: write an [lmscript](https://lmctl.com/tools/lmscript/skill.html) `_dsl_` block,
+compile it, run it with `lmweather --dsl`. No Fortran, no NetCDF, no MPI, no data files, no shared libraries. (It is not WRF; see *Scope*.)
 
 [![CI](https://github.com/lmctl-ai/lmweather/actions/workflows/ci.yml/badge.svg)](https://github.com/lmctl-ai/lmweather/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -49,22 +57,35 @@ same numbers, bit for bit (seeded noise through `perturb`).
 Models, equations, discretization and limits: [durable-memory/03-models-and-limits.md](durable-memory/03-models-and-limits.md);
 schema conventions: [durable-memory/04-schema-v0.md](durable-memory/04-schema-v0.md).
 
-![Rossby-Haurwitz wave on the sphere](examples/renders/rh_wave_plot.png)
-![Rossby wave on a beta-plane](examples/renders/rossby_wave_plot.png)
+Combine it with other hosts in one script: [examples/gallery/spherical_modes.lms](examples/gallery/spherical_modes.lms) integrates
+four spherical-harmonic gravity modes with lmweather and plots them against the analytical Laplace tidal frequencies with
+[lmplot](https://github.com/lmctl-ai/lmplot) (two `_dsl_` blocks, two hosts).
 
-Combine it with other hosts in one script: [examples/combo/](examples/combo) integrates a model with lmweather and draws
-the result with [lmplot](https://github.com/lmctl-ai/lmplot) (two `_dsl_` blocks, two hosts).
+<p align="center">
+  <img src="docs/images/spherical_modes.png" width="680"><br>
+  <a href="examples/gallery/spherical_modes.lms">Spherical-harmonic gravity modes Y_n^0 vs exact Laplace frequencies</a><br>
+  <sub><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/spherical_modes.lms</code></sub>
+</p>
 
 ## Examples
 
-| Program | Shows |
-| --- | --- |
-| [williamson2.lms](examples/williamson2.lms) | steady geostrophic flow on a tilted axis: height errors ~1e-14 over 5 days |
-| [rossby_haurwitz.lms](examples/rossby_haurwitz.lms) | wave 4 over 14 days at T42: phase drift, energy and mass conservation |
-| [geostrophic_adjustment.lms](examples/geostrophic_adjustment.lms) | channel adjustment to the state predicted by potential-vorticity conservation |
-| [rossby_wave.lms](examples/rossby_wave.lms) | westward Rossby wave at c = -beta / (k^2 + l^2 + 1/Ld^2) |
-| [gravity_pulse.lms](examples/gravity_pulse.lms) | a pulse splits into two that travel at sqrt(g H) |
-| [combo/rh_wave_plot.lms](examples/combo/rh_wave_plot.lms), [combo/rossby_wave_plot.lms](examples/combo/rossby_wave_plot.lms) | lmweather integrates, lmplot draws |
+| Program | Shows | Run it |
+| --- | --- | --- |
+| [williamson2.lms](examples/williamson2.lms) | steady geostrophic flow on a tilted axis: height errors ~1e-12 over 5 days | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/williamson2.lms` |
+| [rossby_haurwitz.lms](examples/rossby_haurwitz.lms) | wave 4 over 14 days at T42: phase drift, energy and mass conservation | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/rossby_haurwitz.lms` |
+| [geostrophic_adjustment.lms](examples/geostrophic_adjustment.lms) | channel adjustment to the state predicted by potential-vorticity conservation | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/geostrophic_adjustment.lms` |
+| [rossby_wave.lms](examples/rossby_wave.lms) | westward Rossby wave at c = -beta / (k^2 + l^2 + 1/Ld^2) | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/rossby_wave.lms` |
+| [gravity_pulse.lms](examples/gravity_pulse.lms) | a pulse splits into two that travel at sqrt(g H) | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gravity_pulse.lms` |
+| [gallery/rh_anim.lms](examples/gallery/rh_anim.lms) | 56-frame 14-day Rossby-Haurwitz wave 4 animation encoded with ffmpeg | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/rh_anim.lms` |
+| [gallery/jet_instability.lms](examples/gallery/jet_instability.lms) | barotropic mid-latitude jet instability and synoptic vorticity roll-up at T42 | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/jet_instability.lms` |
+| [gallery/equatorial_kelvin.lms](examples/gallery/equatorial_kelvin.lms) | Matsuno-Gill equatorial Kelvin wave packet and westward Rossby lobes | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/equatorial_kelvin.lms` |
+| [gallery/rossby_haurwitz.lms](examples/gallery/rossby_haurwitz.lms) | Williamson TC6 global geopotential height map at day 7 | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/rossby_haurwitz.lms` |
+| [gallery/geostrophic_adjustment.lms](examples/gallery/geostrophic_adjustment.lms) | Poincare wave radiation, PV-balanced height ridge, and opposing geostrophic jets | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/geostrophic_adjustment.lms` |
+| [gallery/rossby_wave.lms](examples/gallery/rossby_wave.lms) | beta-plane Rossby wave 2D height anomaly and westward phase march | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/rossby_wave.lms` |
+| [gallery/gravity_pulse.lms](examples/gallery/gravity_pulse.lms) | D'Alembert wave splitting and space-time Hovmoller characteristic diagram | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/gravity_pulse.lms` |
+| [gallery/williamson2.lms](examples/gallery/williamson2.lms) | tilted cross-polar geostrophic balance held to machine precision | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/williamson2.lms` |
+| [gallery/planetary_jets.lms](examples/gallery/planetary_jets.lms) | slow vs fast planetary rotation (`wx.planet`) and Rhines-scale zonal jets | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/planetary_jets.lms` |
+| [gallery/spherical_modes.lms](examples/gallery/spherical_modes.lms) | spherical-harmonic gravity modes Y_n^0 checked against Laplace tidal frequencies | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/spherical_modes.lms` |
 
 `tests/` asserts known answers: gravity-wave speed sqrt(gH) (standing and travelling waves, both directions, exact to
 0.05%), the spherical-harmonic gravity-wave frequencies sqrt(n(n+1) g H)/a, Williamson test case 2 at four axis tilts,

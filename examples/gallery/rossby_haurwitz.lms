@@ -1,0 +1,45 @@
+# Williamson test case 6 (Rossby-Haurwitz wave 4) at T42 over 14 days: the planetary wave train drifts east at
+# ~12 deg/day while global mean height and total energy are conserved.
+# lmweather integrates the spectral shallow-water equations; lmplot draws images/rossby_haurwitz.png.
+mkdir("images");
+mkdir("data");
+sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let s = wx.sphere(42).williamson6();
+let m0 = s.mean_height();
+let e0 = s.energy();
+let c0 = s.wave_crest(4, 45.0);
+let drift = "0 0.0 0.0\n";
+let prev = 0.0;
+for (d in range(1, 15)) {
+  s.run_dt(86400.0, 900.0);
+  if (d == 7) { s.save_csv("data/rh_day7.csv"); }
+  let raw = s.wave_crest(4, 45.0) - c0;
+  let step = raw - prev;
+  step = step - floor(step / 90.0 + 0.5) * 90.0;
+  prev = prev + step;
+  drift = drift + str(d) + " " + str(prev) + " " + str((s.energy() / e0 - 1.0) * 1000000.0) + "\n";
+}
+wx.save_text("data/rh_drift.csv", drift);
+wx.assert_close(s.mean_height(), m0, 0.000000001);
+wx.assert_close(s.energy() / e0, 1.0, 0.0001);
+wx.assert_true(prev > 140.0);
+wx.print("14-day eastward crest drift at 45N: " + str(prev) + " deg");
+end _dsl_
+savedsl(sim, "data/rossby_haurwitz-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl data/rossby_haurwitz-sim.dslb;
+assert(r.code == 0);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/rossby_haurwitz.png", 900, 520);
+plot.cmd("set pm3d map; set palette rgbformulae 33,13,10; unset key");
+plot.cmd("set xrange [0:360]; set yrange [-90:90]; set cbrange [8000:10600]");
+plot.cmd("set xtics 60; set ytics 30");
+plot.cmd("set title 'Rossby-Haurwitz wave 4 at day 7 (T42 Gaussian grid, 128 x 64): geopotential height [m]'");
+plot.cmd("set xlabel 'longitude [deg]'; set ylabel 'latitude [deg]'");
+plot.cmd("splot 'data/rh_day7.csv' using 1:2:3 with pm3d");
+plot.close();
+end _dsl_
+savedsl(draw, "data/rossby_haurwitz-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl data/rossby_haurwitz-draw.dslb;
+assert(r.code == 0);
+println("wrote images/rossby_haurwitz.png");

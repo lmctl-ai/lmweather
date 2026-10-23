@@ -1,0 +1,40 @@
+# Williamson test case 6 (Rossby-Haurwitz wave 4 on the sphere), animated over 14 days in 6-hour frames:
+# the four-lobe planetary wave pattern drifts steadily east while global mass and energy stay conserved.
+# Needs lmplot and ffmpeg. lmweather integrates the spectral shallow-water model; lmplot draws the frames.
+mkdir("images");
+mkdir("data");
+mkdir("data/rh_frames");
+sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let s = wx.sphere(21).williamson6();
+let m0 = s.mean_height();
+let e0 = s.energy();
+for (k in range(0, 56)) {
+  s.save_csv("data/rh_frames/f" + str(k) + ".csv");
+  s.run_dt(21600.0, 1800.0);
+}
+wx.assert_close(s.mean_height(), m0, 0.00000001);
+wx.assert_close(s.energy() / e0, 1.0, 0.0005);
+wx.print("14-day energy ratio: " + str(s.energy() / e0));
+end _dsl_
+savedsl(sim, "data/rh_anim-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl data/rh_anim-sim.dslb;
+assert(r.code == 0);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.cmd("set pm3d map; set palette rgbformulae 33,13,10; unset key");
+plot.cmd("set xrange [0:360]; set yrange [-90:90]; set cbrange [8000:10600]");
+plot.cmd("set xtics 60; set ytics 30; set xlabel 'longitude [deg]'; set ylabel 'latitude [deg]'");
+for (k in range(0, 56)) {
+  let day = 0.25 * float(k);
+  plot.png("data/rh_frames/f" + str(k) + ".png", 640, 360);
+  plot.cmd("set title 'Rossby-Haurwitz wave 4: geopotential height [m], day " + str(day) + "'");
+  plot.cmd("splot 'data/rh_frames/f" + str(k) + ".csv' u 1:2:3 with pm3d");
+  plot.close();
+}
+end _dsl_
+savedsl(draw, "data/rh_anim-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl data/rh_anim-draw.dslb;
+assert(r.code == 0);
+r = system ffmpeg -y -loglevel error -framerate 12 -i data/rh_frames/f%d.png -vf "split[a][b];[a]palettegen=max_colors=96[p];[b][p]paletteuse=dither=none" images/rh_anim.gif;
+assert(r.code == 0);
+println("wrote images/rh_anim.gif");
