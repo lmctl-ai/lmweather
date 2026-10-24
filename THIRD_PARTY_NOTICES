@@ -2,7 +2,7 @@ Third-party notices for lmweather 0.1.3
 =======================================
 
 lmweather's own code (cpp/, schema/, scripts/, examples/, tests/; including the vendored `cpp/dslvm.hpp`
-runtime from the cpp-dsl-sdk project and `cpp/expr.hpp`, the expression compiler shared with the lmnum host) is
+runtime from the lmcode-cpp project and `cpp/expr.hpp`, the expression compiler shared with the lmnum host) is
 Copyright (c) 2026 Lattice Systems LLC, MIT license (see LICENSE). `lmweather --notices` prints this file.
 There is no third-party source code in the binary: the FFT, Gauss-Legendre quadrature, associated Legendre
 functions, spherical-harmonic transforms and the finite-difference model are implemented here from the published
