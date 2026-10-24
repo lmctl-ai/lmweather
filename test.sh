@@ -33,7 +33,7 @@ ok "build"
 ctest --test-dir "$BUILD_DIR" --output-on-failure || fail "native physics core tests"
 ok "native physics core regression tests"
 want_version="lmweather $(sed -n 's/^project(lmweather VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
-[ "$want_version" = "lmweather 0.1.2" ] || fail "CMakeLists.txt version is not 0.1.2 ($want_version)"
+[ "$want_version" = "lmweather 0.1.3" ] || fail "CMakeLists.txt version is not 0.1.3 ($want_version)"
 [ "$("$HOST" --version)" = "$want_version" ] || fail "--version is not exactly '$want_version'"
 ok "--version prints exactly '$want_version'"
 python3 scripts/gen-schema.py >/dev/null && git diff --quiet -- schema/lmweather.dsl.json 2>/dev/null || [ ! -e .git ] || fail "schema/lmweather.dsl.json is stale: run scripts/gen-schema.py"
@@ -45,12 +45,21 @@ diff -u <("$LMSCRIPT" --dsl-signatures schema/lmweather.dsl.json) <("$HOST" --ds
 ok "host registry matches compiler signatures"
 "$HOST" --notices >"$WORK/notices.txt" || fail "--notices"
 grep -q "Lattice Systems" "$WORK/notices.txt" || fail "--notices missing third-party text"
-grep -q "lmweather 0.1.2" "$WORK/notices.txt" || fail "--notices missing 0.1.2 version"
+grep -q "lmweather 0.1.3" "$WORK/notices.txt" || fail "--notices missing 0.1.3 version"
 cmp -s "$WORK/notices.txt" THIRD_PARTY_NOTICES || fail "--notices differs from THIRD_PARTY_NOTICES"
 ok "--notices prints THIRD_PARTY_NOTICES byte for byte"
 
 case "$UNAME_S" in
-  Linux) if ldd "$HOST" >/dev/null 2>&1; then fail "executable is dynamically linked"; fi; ok "executable is fully static (no dynamic loader)";;
+  Linux)
+    if command -v readelf >/dev/null 2>&1; then
+      needed="$(readelf -d "$HOST" | sed -n 's/.*(NEEDED).*Shared library: \[\(.*\)\]/\1/p')"
+    else
+      needed="$(ldd "$HOST" | awk '/=>/ {print $1} !/=>/ && /ld-linux/ {sub(/^[[:space:]]*/, ""); sub(/[[:space:]].*/, ""); print $0}' | xargs -n1 basename)"
+    fi
+    [ -n "$needed" ] || fail "expected dynamic glibc linkage on Linux, found no NEEDED entries"
+    bad="$(printf '%s\n' "$needed" | grep -v -E '^(libc\.so\.6|libm\.so\.6|libpthread\.so\.0|libdl\.so\.2|librt\.so\.1|ld-linux.*)' || true)"
+    [ -z "$bad" ] || fail "disallowed Linux dynamic libraries: $bad"
+    ok "Linux binary links only dynamic glibc (${needed//$'\n'/ })";;
   Darwin) bad="$(otool -L "$HOST" | tail -n +2 | grep -v -E '/usr/lib/(libSystem|libc\+\+|libresolv)' || true)"
           [ -z "$bad" ] || fail "non-system dylib dependencies: $bad"; ok "only system libraries linked";;
   MINGW*|MSYS*|CYGWIN*)

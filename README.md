@@ -1,6 +1,6 @@
 # lmweather
 
-**Idealized weather and climate dynamics for lmscript in one static executable: rotating shallow water on the sphere (spectral transform method, Williamson test cases) and on a beta-plane (C-grid finite differences).**
+**Idealized weather and climate dynamics for lmscript in one self-contained executable: rotating shallow water on the sphere (spectral transform method, Williamson test cases) and on a beta-plane (C-grid finite differences).**
 
 [![CI](https://github.com/lmctl-ai/lmweather/actions/workflows/ci.yml/badge.svg)](https://github.com/lmctl-ai/lmweather/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/lmctl-ai/lmweather?label=release)](https://github.com/lmctl-ai/lmweather/releases)
@@ -35,7 +35,7 @@ directory: lmweather integrates, [lmplot](https://github.com/lmctl-ai/lmplot) dr
 Install [lmctl](https://lmctl.com/tools/lmscript/skill.html) (`npm install -g @lmctl-ai/lmctl`), then run any caption above
 from an empty directory, for example `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmweather/main/examples/gallery/rossby_dispersion.lms`
 writes `images/rossby_dispersion.png` in about 30 s. The `install=` binding downloads the released `lmweather` and `lmplot`
-on first use; binaries already on `PATH` take priority. From a checkout, `examples/render-all.sh` regenerates `docs/images/`.
+on first use (Linux binaries require dynamic glibc >= 2.35, Ubuntu 22.04+); binaries already on `PATH` take priority. From a checkout, `examples/render-all.sh` regenerates `docs/images/`.
 
 It is a scripting host, not a command-line tool: write an [lmscript](https://lmctl.com/tools/lmscript/skill.html) `_dsl_` block,
 compile it, run it with `lmweather --dsl`. No Fortran, no NetCDF, no MPI, no data files, no shared libraries. (It is not WRF; see *Scope*.)
@@ -138,7 +138,7 @@ cmake -S . -B build && cmake --build build     # about 15 seconds
 ./test.sh                                      # needs lmscript on PATH
 ```
 
-Linux builds are fully static; macOS links only system libraries; Windows links the MinGW runtime statically.
+Linux builds link `libstdc++`/`libgcc` statically and use only dynamic glibc (>= 2.35); macOS links only system libraries; Windows links the MinGW runtime statically.
 
 ## Scope
 
