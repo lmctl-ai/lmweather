@@ -4,7 +4,7 @@
 # lmweather integrates both planetary spheres at T42; lmplot draws images/planetary_jets.png.
 mkdir("images");
 mkdir("data");
-sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+sim = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 let a = 6371220.0;
 let g = 9.80616;
 let om_earth = 0.00007292115;
@@ -24,12 +24,12 @@ fast.save_csv("data/planet_fast_map.csv");
 fast.save_zonal_mean("data/planet_fast_zonal.csv");
 wx.assert_close(fast.mean_height(), m_fast, 0.000001);
 wx.assert_true(fast.max_wind() > 15.0);
-end _dsl_
+end _lmcode_
 savedsl(sim, "data/planetary_jets-sim.dslb");
 r = system ${dsl_cli(sim)} --dsl data/planetary_jets-sim.dslb;
 assert(r.code == 0);
 
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/planetary_jets.png", 920, 480);
 plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dddddd'");
 plot.cmd("set title 'Planetary rotation and Rhines scale: zonal-mean wind profiles u(lat) at day 5'");
@@ -37,7 +37,7 @@ plot.cmd("set xlabel 'latitude [deg]'; set ylabel 'zonal-mean wind u [m/s]'");
 plot.cmd("set xrange [-90:90]; set xtics 30; set yrange [-30:35]; set key top right box opaque");
 plot.cmd("plot 0 w l lw 1 lc rgb '#999999' notitle, 'data/planet_slow_zonal.csv' u 1:3 w l lw 2.8 lc rgb '#1f77b4' t 'slow rotator (0.5 Omega_E): 3 broad jets', 'data/planet_fast_zonal.csv' u 1:3 w l lw 2.8 lc rgb '#d62728' t 'fast rotator (4.0 Omega_E): 6 banded jets'");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(draw, "data/planetary_jets-draw.dslb");
 r = system ${dsl_cli(draw)} --dsl data/planetary_jets-draw.dslb;
 assert(r.code == 0);

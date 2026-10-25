@@ -5,7 +5,7 @@
 # lmweather integrates the spectral model with orography; lmplot draws images/mountain_flow.png.
 mkdir("images");
 mkdir("data");
-sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+sim = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 let s = wx.sphere(42).williamson5();
 let m0 = s.mean_height();
 let e0 = s.energy();
@@ -21,12 +21,12 @@ wx.print("TC5 day 15: energy change " + str(s.energy() / e0 - 1.0) + ", enstroph
 wx.assert_close(s.mean_height(), m0, 0.000000001);
 wx.assert_close(s.energy() / e0, 1.0, 0.000001);
 wx.assert_true(s.max_wind() > 35.0);
-end _dsl_
+end _lmcode_
 savedsl(sim, "data/mountain_flow-sim.dslb");
 r = system ${dsl_cli(sim)} --dsl data/mountain_flow-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/mountain_flow.png", 1000, 720);
 plot.cmd("set multiplot layout 2,2 title 'Williamson test case 5: zonal flow over an isolated mountain, day 15 (T42)' font ',13'");
 plot.cmd("set pm3d map; unset key; set xrange [0:360]; set yrange [-90:90]; set xtics 90; set ytics 45");
@@ -47,7 +47,7 @@ plot.cmd("set title 'strongest wind: the mountain accelerates the flow'; set yla
 plot.cmd("plot 'data/tc5_conservation.csv' u 1:5 w lp lw 2.5 pt 7 lc rgb '#9467bd'");
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(draw, "data/mountain_flow-draw.dslb");
 r = system ${dsl_cli(draw)} --dsl data/mountain_flow-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

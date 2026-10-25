@@ -3,7 +3,7 @@
 # advection of the truncated bell is exact up to time stepping (normalized l2 3e-4 at T42 after 12 days), so the real
 # test-case error is the representation of the bell at the truncation (undershoot -3.2 m, peak 989.5 m at T42).
 out = ARGV.len() > 0 ? ARGV[0] : "build/sphere_tracer.dslb";
-p = _dsl_ cli="lmweather";
+p = _lmcode_ cli="lmweather";
 let pi = 3.141592653589793;
 # over the poles (alpha = pi/2 - 0.05, the hardest orientation for a lat-lon grid), T42, 30 minute steps (16% of the limit)
 let s = wx.sphere(42).williamson1(pi / 2.0 - 0.05);
@@ -56,5 +56,5 @@ wx.print("TC6 tracer: mass ratio " + str(r.tracer_mass() / mass0) + " mean " + s
 wx.assert_close(r.tracer_mass() / mass0, 1.0, 0.0001);
 # stirred by 100 m/s winds without diffusion the spectral tracer overshoots its [0, 2] range by about 0.23 at T21
 wx.assert_true(r.tracer_min() > -0.5 && r.tracer_min() < 0.0 && r.tracer_max() > 2.0 && r.tracer_max() < 2.5);
-end _dsl_
+end _lmcode_
 savedsl(p, out);

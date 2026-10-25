@@ -1,7 +1,7 @@
 # Williamson test case 6: the Rossby-Haurwitz wave of zonal wavenumber 4 travels east over 14 days at T42.
 mkdir("build/examples");
 out = ARGV.len() > 0 ? ARGV[0] : "build/rossby_haurwitz.dslb";
-p = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+p = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 let pi = 3.141592653589793;
 let s = wx.sphere(42).williamson6();
 let m0 = s.mean_height();
@@ -21,7 +21,7 @@ wx.print("day, crest shift (deg mod 90), relative energy change:");
 wx.print(rows);
 wx.assert_close(s.mean_height(), m0, 0.000000001);
 wx.assert_close(s.energy() / e0, 1.0, 0.0001);
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0, r.stdout + r.stderr);

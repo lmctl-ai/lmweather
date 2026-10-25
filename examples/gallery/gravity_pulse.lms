@@ -4,7 +4,7 @@
 # lmweather integrates the shallow-water channel; lmplot draws images/gravity_pulse.png.
 mkdir("images");
 mkdir("data");
-sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+sim = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 let lx = 4000000.0;
 let nx = 200;
 let m = wx.plane(nx, 6, lx, 60000.0).depth(100.0).linear();
@@ -36,12 +36,12 @@ for (step in range(0, 65)) {
   m.run(1200.0);
 }
 wx.save_text("data/pulse_hov.csv", hov);
-end _dsl_
+end _lmcode_
 savedsl(sim, "data/gravity_pulse-sim.dslb");
 r = system ${dsl_cli(sim)} --dsl data/gravity_pulse-sim.dslb;
 assert(r.code == 0);
 
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/gravity_pulse.png", 920, 480);
 plot.cmd("set multiplot layout 1,2");
 plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dddddd'");
@@ -54,7 +54,7 @@ plot.cmd("set cbrange [0:0.8]; unset colorbox");
 plot.cmd("plot 'data/pulse_hov.csv' u 1:2:3 with image notitle");
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(draw, "data/gravity_pulse-draw.dslb");
 r = system ${dsl_cli(draw)} --dsl data/gravity_pulse-draw.dslb;
 assert(r.code == 0);

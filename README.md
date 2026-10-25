@@ -42,7 +42,7 @@ compile it, run it with `lmweather --dsl`. No Fortran, no NetCDF, no MPI, no dat
 
 ```
 # rh.lms: the Rossby-Haurwitz wave (Williamson test case 6) drifts east; mass and energy are conserved
-p = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+p = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 let s = wx.sphere(42).williamson6();                 # T42: 128 x 64 Gaussian grid
 let m0 = s.mean_height();
 let e0 = s.energy();
@@ -51,7 +51,7 @@ wx.print("crest of wave 4 at 45N: " + str(s.wave_crest(4, 45.0)) + " deg");
 wx.assert_close(s.mean_height(), m0, 0.000000001);
 wx.assert_close(s.energy() / e0, 1.0, 0.0001);
 s.save_csv("rh_day7.csv");                           # lon lat h u v zeta, ready for gnuplot pm3d
-end _dsl_
+end _lmcode_
 savedsl(p, "rh.dslb");
 system ${dsl_cli(p)} --dsl rh.dslb;
 ```

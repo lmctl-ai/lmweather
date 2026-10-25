@@ -7,7 +7,7 @@
 # lmweather integrates the linear C-grid channel; lmplot draws images/adjustment_width.png.
 mkdir("images");
 mkdir("data");
-sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+sim = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 let pi = 3.141592653589793;
 let ny = 200;                                              # 40 km cells across the 8000 km channel
 let ly = 8000000.0;
@@ -54,12 +54,12 @@ for (i in range(0, 5)) {
   wx.assert_close(sim_center, pred, 0.03);
 }
 wx.save_text("data/adjustment_width.csv", rows);
-end _dsl_
+end _lmcode_
 savedsl(sim, "data/adjustment_width-sim.dslb");
 r = system ${dsl_cli(sim)} --dsl data/adjustment_width-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/adjustment_width.png", 900, 560);
 plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dddddd'; set key below");
 plot.cmd("set title 'Geostrophic adjustment of a 1 m ridge: what survives depends on its width vs the Rossby radius'");
@@ -67,7 +67,7 @@ plot.cmd("set xlabel 'ridge width L / L_d   (L_d = sqrt(g H) / f = 990 km)'; set
 plot.cmd("set xtics (0.25, 0.5, 1, 2, 4); set xrange [0.2:5]");
 plot.cmd("plot 'data/adjustment_width.csv' u 1:3 w l lw 2.5 lc rgb '#1f77b4' t 'centre height, potential-vorticity prediction h_n / (1 + k_n^2 L_d^2)', '' u 1:2 w p pt 7 ps 1.8 lc rgb '#d62728' t 'centre height, lmweather (time mean over 10 inertial periods)', '' u 1:4 w lp lw 2 dt 2 pt 5 lc rgb '#2ca02c' t 'energy left in the balanced state (rest radiates as inertia-gravity waves)'");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(draw, "data/adjustment_width-draw.dslb");
 r = system ${dsl_cli(draw)} --dsl data/adjustment_width-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

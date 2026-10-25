@@ -5,7 +5,7 @@
 mkdir("images");
 mkdir("data");
 mkdir("data/kelvin_frames");
-sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+sim = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 let lx = 24000000.0;
 let ly = 8000000.0;
 let m = wx.plane(160, 64, lx, ly).depth(200.0).coriolis(0.0, 0.0000000000228).linear();
@@ -18,12 +18,12 @@ for (k in range(0, 36)) {
 let h_kelvin = m.h_at(10000000.0 + c * 35.0 * 5400.0, 0.5 * ly) - 200.0;
 wx.print("after 52.5 h the Kelvin crest at x0 + c t is " + str(h_kelvin) + " m high");
 wx.assert_true(h_kelvin > 2.0);
-end _dsl_
+end _lmcode_
 savedsl(sim, "data/kelvin_anim-sim.dslb");
 r = system ${dsl_cli(sim)} --dsl data/kelvin_anim-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.cmd("set pm3d map; unset key; set border 3; set tics nomirror");
 plot.cmd("set palette defined (-1.5 '#2166ac', 0 '#f7f7f7', 2 '#fddbc7', 4.5 '#b2182b'); set cbrange [-1.5:4.5]; set cblabel 'h - H [m]'");
 plot.cmd("set xrange [-9000:12000]; set yrange [-3800:3800]; set xlabel 'x - x_0 [km]'; set ylabel 'y - y_{eq} [km]'");
@@ -34,7 +34,7 @@ for (k in range(0, 36)) {
   plot.cmd("splot 'data/kelvin_frames/f" + str(k) + ".csv' u (($1-10000000.0)/1000.0):(($2-4000000.0)/1000.0):($3-200.0) w pm3d");
   plot.close();
 }
-end _dsl_
+end _lmcode_
 savedsl(draw, "data/kelvin_anim-draw.dslb");
 r = system ${dsl_cli(draw)} --dsl data/kelvin_anim-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

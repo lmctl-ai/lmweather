@@ -1,6 +1,6 @@
 # Shallow-water gravity waves on a plane: phase speed sqrt(g H), standing and travelling waves, mass conservation.
 out = ARGV.len() > 0 ? ARGV[0] : "build/plane_gravity_wave.dslb";
-p = _dsl_ cli="lmweather";
+p = _lmcode_ cli="lmweather";
 let pi = 3.141592653589793;
 let lx = 2000000.0;
 # H = 100 m: c = sqrt(9.81 * 100) = 31.32 m/s
@@ -39,5 +39,5 @@ e.fields("cos(2 * pi * x / lx)", "0", "0");
 let e0 = e.energy();
 e.run(20000.0);
 wx.assert_close(e.energy() / e0, 1.0, 0.0001);
-end _dsl_
+end _lmcode_
 savedsl(p, out);

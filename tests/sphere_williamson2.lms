@@ -1,7 +1,7 @@
 # Williamson et al. (1992) test case 2: steady-state geostrophic flow (solid-body rotation balanced by the height field),
 # for rotation-axis tilts 0, 0.05, pi/2 - 0.05 and pi/2. The state must not change in 5 days.
 out = ARGV.len() > 0 ? ARGV[0] : "build/sphere_williamson2.dslb";
-p = _dsl_ cli="lmweather";
+p = _lmcode_ cli="lmweather";
 let pi = 3.141592653589793;
 let tilt = 0.0;
 for (i in range(0, 4)) {
@@ -33,5 +33,5 @@ wx.assert_close(s.mean_height(), 2363.02, 0.01);
 let wrong = wx.sphere(21).fields("29400.0 / g - (a * omega * 38.6106 + 38.6106 * 38.6106 / 2.0) * pow(0 - cos(lon) * cos(lat) * sin(1.5) + sin(lat) * cos(1.5), 2) / g", "38.6106 * (cos(lat) * cos(1.5) + sin(lat) * cos(lon) * sin(1.5))", "0 - 38.6106 * sin(lon) * sin(1.5)");
 wrong.run_dt(86400.0, 1800.0);
 wx.assert_true(wrong.error_l2() > 0.001);
-end _dsl_
+end _lmcode_
 savedsl(p, out);

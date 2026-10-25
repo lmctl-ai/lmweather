@@ -4,7 +4,7 @@
 # lmweather integrates the tilted-axis benchmark; lmplot draws images/williamson2.png.
 mkdir("images");
 mkdir("data");
-sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+sim = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 let pi = 3.141592653589793;
 let s = wx.sphere(42).williamson2(pi / 2.0 - 0.05);
 let m0 = s.mean_height();
@@ -15,12 +15,12 @@ wx.print("day 5 normalized L2 error: " + str(s.error_l2()) + ", L_inf error: " +
 wx.assert_true(s.error_l2() < 0.000001);
 wx.assert_close(s.mean_height(), m0, 0.000000001);
 wx.assert_close(s.energy() / e0, 1.0, 0.000000001);
-end _dsl_
+end _lmcode_
 savedsl(sim, "data/williamson2-sim.dslb");
 r = system ${dsl_cli(sim)} --dsl data/williamson2-sim.dslb;
 assert(r.code == 0);
 
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/williamson2.png", 900, 520);
 plot.cmd("set pm3d map; set palette rgbformulae 22,13,-31; unset key");
 plot.cmd("set xrange [0:360]; set yrange [-90:90]; set cbrange [1000:3000]");
@@ -29,7 +29,7 @@ plot.cmd("set title 'Williamson TC2 tilted cross-polar geostrophic flow at day 5
 plot.cmd("set xlabel 'longitude [deg]'; set ylabel 'latitude [deg]'");
 plot.cmd("splot 'data/williamson2_day5.csv' using 1:2:3 with pm3d");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(draw, "data/williamson2-draw.dslb");
 r = system ${dsl_cli(draw)} --dsl data/williamson2-draw.dslb;
 assert(r.code == 0);

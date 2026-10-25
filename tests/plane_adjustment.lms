@@ -1,7 +1,7 @@
 # Geostrophic (Rossby) adjustment in a channel: an unbalanced height bump radiates gravity waves and settles into the
 # state fixed by conservation of linear potential vorticity, eta^_n = eta0^_n / (1 + (n pi Ld / Ly)^2) in cosine modes.
 out = ARGV.len() > 0 ? ARGV[0] : "build/plane_adjustment.dslb";
-p = _dsl_ cli="lmweather";
+p = _lmcode_ cli="lmweather";
 let pi = 3.141592653589793;
 let ny = 200;
 let ly = 4000000.0;
@@ -61,5 +61,5 @@ wx.assert_true(pred1 > 0.25 && pred1 < 0.4);
 wx.assert_true(m.max_speed() > 0.01 && m.max_speed() < 0.2);
 # energy cannot grow (linear energy is conserved to the time stepping error)
 wx.assert_close(m.energy() / e0, 1.0, 0.0005);
-end _dsl_
+end _lmcode_
 savedsl(p, out);

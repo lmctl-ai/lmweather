@@ -4,7 +4,7 @@
 # lmweather integrates the f-plane channel; lmplot draws images/geostrophic_adjustment.png.
 mkdir("images");
 mkdir("data");
-sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+sim = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 let pi = 3.141592653589793;
 let ly = 4000000.0;
 let ny = 200;
@@ -58,12 +58,12 @@ wx.save_text("data/adjust_profiles.csv", prof);
 wx.print("center height: simulated " + str(avg_center) + " m, PV prediction " + str(pred_center) + " m");
 wx.assert_close(avg_center, pred_center, 0.01);
 wx.assert_close(m.pv_anomaly_rms() / q0, 1.0, 0.001);
-end _dsl_
+end _lmcode_
 savedsl(sim, "data/geostrophic_adjustment-sim.dslb");
 r = system ${dsl_cli(sim)} --dsl data/geostrophic_adjustment-sim.dslb;
 assert(r.code == 0);
 
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/geostrophic_adjustment.png", 920, 480);
 plot.cmd("set multiplot layout 1,2");
 plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dddddd'");
@@ -75,7 +75,7 @@ plot.cmd("set xrange [-2000:2000]; set yrange [-2.8:2.8]; set key top right box 
 plot.cmd("plot 0 w l lw 1 lc rgb '#999999' notitle, 'data/adjust_profiles.csv' u 1:4 w l lw 2.8 lc rgb '#d62728' t 'u(y) = -(g/f_0) dh/dy'");
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(draw, "data/geostrophic_adjustment-draw.dslb");
 r = system ${dsl_cli(draw)} --dsl data/geostrophic_adjustment-draw.dslb;
 assert(r.code == 0);

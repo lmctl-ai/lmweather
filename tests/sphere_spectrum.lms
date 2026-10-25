@@ -2,7 +2,7 @@
 # of uniform depth H it equals kinetic_energy() / H to rounding; a single spherical harmonic puts all its potential energy
 # in one degree; energy = kinetic + potential; decaying turbulence under hyperdiffusion loses kinetic energy at high n.
 out = ARGV.len() > 0 ? ARGV[0] : "build/sphere_spectrum.dslb";
-p = _dsl_ cli="lmweather";
+p = _lmcode_ cli="lmweather";
 let pi = 3.141592653589793;
 let g = 9.80616;
 # solid-body rotation plus a wave-3 meridional wind on a uniform 2000 m layer: mean of |v|^2/2 against the spectrum
@@ -33,5 +33,5 @@ wx.print("decaying turbulence: kinetic energy day 1 " + str(k1) + " day 5 " + st
 wx.assert_true(t.energy() < e1);
 wx.assert_true(t.kinetic_energy() > 0.5 * k1);
 wx.assert_close(t.mean_height(), 4000.0, 0.000000001);
-end _dsl_
+end _lmcode_
 savedsl(p, out);

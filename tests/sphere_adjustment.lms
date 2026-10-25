@@ -1,7 +1,7 @@
 # Geostrophic adjustment on the rotating sphere: a seeded random height anomaly on a resting 5960 m layer spins up
 # winds; mass is conserved exactly and energy to the time-stepping error; the same seed gives the same bits.
 out = ARGV.len() > 0 ? ARGV[0] : "build/sphere_adjustment.dslb";
-p = _dsl_ cli="lmweather";
+p = _lmcode_ cli="lmweather";
 let s = wx.sphere(21).fields("5960.0", "0", "0").perturb(30.0, 7, 8);
 let rest = wx.sphere(21).fields("5960.0", "0", "0");
 wx.assert_close(rest.max_wind(), 0.0, 0.0000000001);
@@ -42,5 +42,5 @@ d.run_dt(5.0 * 86400.0, 1800.0);
 nd.run_dt(5.0 * 86400.0, 1800.0);
 wx.assert_true(d.energy() < nd.energy());
 wx.assert_close(d.mean_height(), 5960.0, 0.000000001);
-end _dsl_
+end _lmcode_
 savedsl(p, out);

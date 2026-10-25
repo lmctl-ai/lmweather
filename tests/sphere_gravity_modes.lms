@@ -1,7 +1,7 @@
 # Linear gravity waves on a non-rotating sphere of resting depth H: the spherical harmonic Y_n^m oscillates at
 # omega = sqrt(n (n + 1) g H) / a exactly (the equations decouple by degree).
 out = ARGV.len() > 0 ? ARGV[0] : "build/sphere_gravity_modes.dslb";
-p = _dsl_ cli="lmweather";
+p = _lmcode_ cli="lmweather";
 let pi = 3.141592653589793;
 let a = 6371220.0;
 let g = 9.80616;
@@ -35,5 +35,5 @@ let fast = wx.planet(21, a, 0.0, g).mode(5, 1, 1.0, 2000.0);
 let half = pi / (sqrt(30.0 * g * 2000.0) / a);
 fast.run_dt(half, 500.0);
 wx.assert_close(fast.mode_coefficient(5, 1, "re") / 0.5, -1.0, 0.003);
-end _dsl_
+end _lmcode_
 savedsl(p, out);

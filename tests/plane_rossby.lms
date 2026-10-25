@@ -1,7 +1,7 @@
 # Rossby waves on a beta-plane channel: westward phase speed c = -beta / (k^2 + l^2 + 1/Ld^2), a wave that
 # the height field and the winds carry together; no wave without beta.
 out = ARGV.len() > 0 ? ARGV[0] : "build/plane_rossby.dslb";
-p = _dsl_ cli="lmweather";
+p = _lmcode_ cli="lmweather";
 let pi = 3.141592653589793;
 let lx = 4000000.0;
 let ly = 2000000.0;
@@ -50,5 +50,5 @@ s1.run(2.0 * 86400.0);
 let sh1 = s1.zonal_crest(1, 15) - c1;
 sh1 = sh1 - floor(sh1 / lx + 0.5) * lx;
 wx.assert_close(s2 / sh1, 2.0, 0.15);
-end _dsl_
+end _lmcode_
 savedsl(p, out);

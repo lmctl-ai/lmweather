@@ -8,7 +8,7 @@
 mkdir("images");
 mkdir("data");
 # kL = m / 4 for zonal wavenumber m = 1 .. 10 in a channel four jet widths long
-sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+sim = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 let pi = 3.141592653589793;
 let L = 100000.0;
 let lx = 2.0 * pi * L * 4.0;
@@ -26,12 +26,12 @@ for (m in range(1, 11)) {
   wx.print("m = " + mm + " (kL = " + str(float(m) / 4.0) + "): wave energy ratio over 48 h " + str(e2 / e1));
 }
 wx.save_text("data/jet_growth.csv", rows);
-end _dsl_
+end _lmcode_
 savedsl(sim, "data/jet_growth_rate-sim.dslb");
 r = system ${dsl_cli(sim)} --dsl data/jet_growth_rate-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
-prof = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+prof = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 # the jet profile and its vorticity gradient -u'' for the Rayleigh panel
 let prof = "";
 for (j in range(0, 161)) {
@@ -43,12 +43,12 @@ for (j in range(0, 161)) {
   prof = prof + str(y) + " " + str(u) + " " + str(-upp) + "\n";
 }
 wx.save_text("data/jet_profile.csv", prof);
-end _dsl_
+end _lmcode_
 savedsl(prof, "data/jet_growth_rate-prof.dslb");
 r = system ${dsl_cli(prof)} --dsl data/jet_growth_rate-prof.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/jet_growth_rate.png", 1000, 480);
 plot.cmd("set multiplot layout 1,2 title 'Bickley jet u = U sech^2(y/L): where it is unstable and how fast (U = 20 m/s, L = 100 km)' font ',13'");
 plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dddddd'; set key top right box opaque");
@@ -63,7 +63,7 @@ plot.cmd("set arrow 3 from 2,-0.03 to 2,0.2 nohead lw 2 dt 2 lc rgb '#d62728'; s
 plot.cmd("plot 0 w l lw 1 lc rgb '#999999' notitle, 'data/jet_growth.csv' u 2:(0.5 * log($4 / $3) / (48.0 * 3600.0) * 100000.0 / 20.0) w lp lw 2.5 pt 7 ps 1.6 lc rgb '#1f77b4' t 'lmweather: wave energy growth, hours 12 to 60'");
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(draw, "data/jet_growth_rate-draw.dslb");
 r = system ${dsl_cli(draw)} --dsl data/jet_growth_rate-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

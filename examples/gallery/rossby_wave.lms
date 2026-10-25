@@ -3,7 +3,7 @@
 # lmweather integrates the beta-plane channel for 12 days; lmplot draws images/rossby_wave.png.
 mkdir("images");
 mkdir("data");
-sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+sim = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 let pi = 3.141592653589793;
 let lx = 4000000.0;
 let ly = 2000000.0;
@@ -27,12 +27,12 @@ let shift = m.zonal_crest(1, 20) - c0;
 let diff = shift - cp * 864000.0;
 diff = diff - floor(diff / lx + 0.5) * lx;
 wx.assert_close(diff, 0.0, 50000.0);
-end _dsl_
+end _lmcode_
 savedsl(sim, "data/rossby_wave-sim.dslb");
 r = system ${dsl_cli(sim)} --dsl data/rossby_wave-sim.dslb;
 assert(r.code == 0);
 
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/rossby_wave.png", 900, 580);
 plot.cmd("set multiplot layout 2,1");
 plot.cmd("set border 3; set tics nomirror");
@@ -46,7 +46,7 @@ plot.cmd("set xlabel 'x [km]'; set ylabel 'h - H [m]'; set xrange [0:4000]; set 
 plot.cmd("plot 'data/rossby_row0.csv' u ($1/1000.0):($2-1000.0) w l lw 2.4 lc rgb '#1f77b4' t 'day 0', 'data/rossby_row4.csv' u ($1/1000.0):($2-1000.0) w l lw 2.4 lc rgb '#2ca02c' t 'day 4', 'data/rossby_row8.csv' u ($1/1000.0):($2-1000.0) w l lw 2.4 lc rgb '#d62728' t 'day 8'");
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(draw, "data/rossby_wave-draw.dslb");
 r = system ${dsl_cli(draw)} --dsl data/rossby_wave-draw.dslb;
 assert(r.code == 0);

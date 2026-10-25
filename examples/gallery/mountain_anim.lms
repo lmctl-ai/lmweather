@@ -4,7 +4,7 @@
 mkdir("images");
 mkdir("data");
 mkdir("data/mountain_frames");
-sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+sim = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 let s = wx.sphere(42).williamson5();
 let m0 = s.mean_height();
 for (k in range(0, 45)) {
@@ -13,12 +13,12 @@ for (k in range(0, 45)) {
 }
 wx.assert_close(s.mean_height(), m0, 0.000000001);
 wx.print("day 15: max wind " + str(s.max_wind()) + " m/s");
-end _dsl_
+end _lmcode_
 savedsl(sim, "data/mountain_anim-sim.dslb");
 r = system ${dsl_cli(sim)} --dsl data/mountain_anim-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.cmd("set pm3d map; unset key; set palette rgbformulae 33,13,10; set cbrange [5000:6000]; set cblabel 'free surface [m]'");
 plot.cmd("set xrange [0:360]; set yrange [-90:90]; set xtics 60; set ytics 30; set xlabel 'longitude [deg]'; set ylabel 'latitude [deg]'");
 plot.cmd("set contour base; set cntrparam levels discrete 500, 1500; unset clabel");
@@ -29,7 +29,7 @@ for (k in range(0, 45)) {
   plot.cmd("splot 'data/mountain_frames/f" + str(k) + ".csv' u 1:2:($3+$8) w pm3d, '' u 1:2:8 w lines nosurface lc rgb 'black' lw 1.5");
   plot.close();
 }
-end _dsl_
+end _lmcode_
 savedsl(draw, "data/mountain_anim-draw.dslb");
 r = system ${dsl_cli(draw)} --dsl data/mountain_anim-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

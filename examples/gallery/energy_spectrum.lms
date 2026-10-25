@@ -5,7 +5,7 @@
 # lmweather integrates the spectral model and writes the spectra; lmplot draws images/energy_spectrum.png.
 mkdir("images");
 mkdir("data");
-sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+sim = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 let s = wx.sphere(42).fields("6000.0", "0", "0").perturb(600.0, 5, 10).diffusion(100000000000000.0);
 let e0 = s.energy();
 s.run_dt(0.5 * 86400.0, 600.0);
@@ -19,12 +19,12 @@ s.save_csv("data/turbulence_d8.csv");
 wx.print("kinetic energy: 12 h " + str(k1) + ", day 8 " + str(s.kinetic_energy()) + " J/m2; max wind " + str(s.max_wind()) + " m/s; total energy lost to hyperdiffusion: " + str(1.0 - s.energy() / e0));
 wx.assert_true(s.energy() < e0);
 wx.assert_true(s.max_wind() > 20.0);
-end _dsl_
+end _lmcode_
 savedsl(sim, "data/energy_spectrum-sim.dslb");
 r = system ${dsl_cli(sim)} --dsl data/energy_spectrum-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/energy_spectrum.png", 1000, 480);
 plot.cmd("set multiplot layout 1,2 title 'Decaying shallow-water turbulence at T42: vortices and the n^{-3} enstrophy cascade' font ',13'");
 plot.cmd("set pm3d map; unset key; set xrange [0:360]; set yrange [-90:90]; set xtics 90; set ytics 45");
@@ -37,7 +37,7 @@ plot.cmd("set label 1 'n^{-3}' at 22, 1.2 tc rgb '#999999' font ',11'");
 plot.cmd("plot 'data/spectrum_h12.csv' u 1:2 w lp lw 2 pt 7 ps 0.8 lc rgb '#9ecae1' t 'hour 12 (forced n <= 10)', 'data/spectrum_d2.csv' u 1:2 w lp lw 2 pt 7 ps 0.8 lc rgb '#4292c6' t 'day 2', 'data/spectrum_d8.csv' u 1:2 w lp lw 2.5 pt 7 ps 0.9 lc rgb '#08306b' t 'day 8', 6000.0 * x ** -3 w l lw 1.5 dt 2 lc rgb '#999999' notitle");
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(draw, "data/energy_spectrum-draw.dslb");
 r = system ${dsl_cli(draw)} --dsl data/energy_spectrum-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

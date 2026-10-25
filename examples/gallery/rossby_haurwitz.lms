@@ -3,7 +3,7 @@
 # lmweather integrates the spectral shallow-water equations; lmplot draws images/rossby_haurwitz.png.
 mkdir("images");
 mkdir("data");
-sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+sim = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 let s = wx.sphere(42).williamson6();
 let m0 = s.mean_height();
 let e0 = s.energy();
@@ -24,12 +24,12 @@ wx.assert_close(s.mean_height(), m0, 0.000000001);
 wx.assert_close(s.energy() / e0, 1.0, 0.0001);
 wx.assert_true(prev > 140.0);
 wx.print("14-day eastward crest drift at 45N: " + str(prev) + " deg");
-end _dsl_
+end _lmcode_
 savedsl(sim, "data/rossby_haurwitz-sim.dslb");
 r = system ${dsl_cli(sim)} --dsl data/rossby_haurwitz-sim.dslb;
 assert(r.code == 0);
 
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/rossby_haurwitz.png", 900, 520);
 plot.cmd("set pm3d map; set palette rgbformulae 33,13,10; unset key");
 plot.cmd("set xrange [0:360]; set yrange [-90:90]; set cbrange [8000:10600]");
@@ -38,7 +38,7 @@ plot.cmd("set title 'Rossby-Haurwitz wave 4 at day 7 (T42 Gaussian grid, 128 x 6
 plot.cmd("set xlabel 'longitude [deg]'; set ylabel 'latitude [deg]'");
 plot.cmd("splot 'data/rh_day7.csv' using 1:2:3 with pm3d");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(draw, "data/rossby_haurwitz-draw.dslb");
 r = system ${dsl_cli(draw)} --dsl data/rossby_haurwitz-draw.dslb;
 assert(r.code == 0);

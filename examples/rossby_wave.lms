@@ -1,7 +1,7 @@
 # A Rossby wave on a beta-plane channel drifts west at c = -beta / (k^2 + l^2 + 1/Ld^2); ten days of the height field to CSV.
 mkdir("build/examples");
 out = ARGV.len() > 0 ? ARGV[0] : "build/rossby_wave.dslb";
-p = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+p = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 let pi = 3.141592653589793;
 let lx = 4000000.0;
 let ly = 2000000.0;
@@ -24,7 +24,7 @@ wx.print("crest moved " + str(shift / 1000.0) + " km in 10 days; prediction " + 
 let diff = shift - cp * 864000.0;
 diff = diff - floor(diff / lx + 0.5) * lx;      # crests repeat every wavelength
 wx.assert_close(diff, 0.0, 60000.0);
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0, r.stdout + r.stderr);

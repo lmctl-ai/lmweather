@@ -4,7 +4,7 @@
 # resolution-converged crest drift of this model: 79.3 (T21), 79.1 (T42), 79.0 (T63) degrees in 7 days = 11.3 deg/day,
 # 7% below the non-divergent nu = (R (3 + R) w - 2 Omega) / ((1 + R)(2 + R)) = 12.2 deg/day.
 out = ARGV.len() > 0 ? ARGV[0] : "build/sphere_rossby_haurwitz.dslb";
-p = _dsl_ cli="lmweather";
+p = _lmcode_ cli="lmweather";
 let pi = 3.141592653589793;
 let w = 0.000007848;
 let om = 0.00007292;
@@ -55,5 +55,5 @@ b21.run_dt(4.0 * 86400.0, 600.0);
 let db = a21.wave_crest(4, 45.0) - b21.wave_crest(4, 45.0);
 db = db - floor(db / 90.0 + 0.5) * 90.0;
 wx.assert_close(db, 0.0, 0.01);
-end _dsl_
+end _lmcode_
 savedsl(p, out);

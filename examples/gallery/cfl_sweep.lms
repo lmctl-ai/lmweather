@@ -5,7 +5,7 @@
 # lmweather runs 2 days of test case 6 at eleven step sizes; lmplot draws images/cfl_sweep.png.
 mkdir("images");
 mkdir("data");
-sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+sim = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 let ref = wx.sphere(21).williamson6();
 let limit = ref.stable_dt() * 1.8856180831641;            # stable_dt is 1.5/omega, the RK4 limit 2 sqrt(2)/omega
 wx.print("RK4 limit for this state: " + str(limit) + " s");
@@ -45,22 +45,22 @@ for (i in range(0, 11)) {
 }
 wx.save_text("data/cfl_sweep.csv", rows);
 wx.save_text("data/cfl_limit.csv", str(limit) + " 0.0001\n" + str(limit) + " 100\n");
-end _dsl_
+end _lmcode_
 savedsl(sim, "data/cfl_sweep-sim.dslb");
 r = system ${dsl_cli(sim)} --dsl data/cfl_sweep-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 # a step above the limit: the host refuses before taking it
-over = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+over = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 let s = wx.sphere(21).williamson6();
 s.run_dt(86400.0, 2000.0);
-end _dsl_
+end _lmcode_
 savedsl(over, "data/cfl_sweep-over.dslb");
 r = system ${dsl_cli(over)} --dsl data/cfl_sweep-over.dslb;
 assert(r.code != 0, "a 2000 s step should have been refused");
 println("dt = 2000 s: " + r.stdout);
 
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/cfl_sweep.png", 900, 560);
 plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dddddd'; set key top left box opaque");
 plot.cmd("set title 'Time step vs error, Rossby-Haurwitz wave at T21 for 2 days (reference: dt = 100 s)'");
@@ -70,7 +70,7 @@ plot.cmd("set label 1 'RK4 limit 2 sqrt(2)/omega = 1845 s: a larger step is refu
 plot.cmd("set label 2 'error ~ dt^4' at 1750, 0.012 right tc rgb '#999999' font ',10'");
 plot.cmd("plot 'data/cfl_limit.csv' u 1:2 w l lw 2 dt 2 lc rgb '#d62728' notitle, 0.0003 * (x / 300.0) ** 4 w l lw 1.5 lc rgb '#bbbbbb' notitle, 'data/cfl_sweep.csv' u 1:2 w lp lw 2.5 pt 7 ps 1.5 lc rgb '#1f77b4' t 'rms height error (fourth-order convergence)', '' u 1:($3 * 1000000.0) w lp lw 2 pt 5 ps 1.2 lc rgb '#ff7f0e' t 'energy drift |E/E_0 - 1| x 10^6'");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(draw, "data/cfl_sweep-draw.dslb");
 r = system ${dsl_cli(draw)} --dsl data/cfl_sweep-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

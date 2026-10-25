@@ -3,7 +3,7 @@
 # collapses. Williamson et al. (1992) test case 5: zonal flow over an isolated conical mountain for 15 days conserves mass
 # exactly and energy and potential enstrophy to the truncation error, and a lee-side vorticity anomaly forms.
 out = ARGV.len() > 0 ? ARGV[0] : "build/sphere_orography.dslb";
-p = _dsl_ cli="lmweather";
+p = _lmcode_ cli="lmweather";
 let pi = 3.141592653589793;
 let cone = "2000.0 * (1 - sqrt(min((pi / 9) * (pi / 9), (lon - 1.5 * pi) * (lon - 1.5 * pi) + (lat - pi / 6) * (lat - pi / 6))) / (pi / 9))";
 let r = wx.sphere(21).orography(cone).fields("5960.0 - " + cone, "0", "0");
@@ -44,5 +44,5 @@ let c = wx.sphere(21).williamson5();
 c.run_dt(15.0 * 86400.0, 1200.0);
 wx.assert_close(c.error_l2(), s.error_l2(), 0.0002);
 wx.assert_true(s.error_l2() > 0.01 && s.error_l2() < 0.02);
-end _dsl_
+end _lmcode_
 savedsl(p, out);
