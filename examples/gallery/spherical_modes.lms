@@ -54,7 +54,7 @@ wx.print("worst modal amplitude error over 24 h: " + str(worst));
 wx.assert_close(worst, 0.0, 0.002);
 end _lmcode_
 savedsl(sim, "data/spherical_modes-sim.dslb");
-r = system ${dsl_cli(sim)} --dsl data/spherical_modes-sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode data/spherical_modes-sim.dslb;
 assert(r.code == 0);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -67,6 +67,6 @@ plot.cmd("plot 'data/modes_exact.csv' u 1:2 w l lw 2 lc rgb '#1f77b4' t 'n = 1',
 plot.close();
 end _lmcode_
 savedsl(draw, "data/spherical_modes-draw.dslb");
-r = system ${dsl_cli(draw)} --dsl data/spherical_modes-draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode data/spherical_modes-draw.dslb;
 assert(r.code == 0);
 println("wrote images/spherical_modes.png");

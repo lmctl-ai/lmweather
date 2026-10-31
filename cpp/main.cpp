@@ -1,5 +1,5 @@
 // lmweather: rotating shallow-water models (sphere by the spectral transform method, beta-plane by finite differences)
-// behind an lmscript `_dsl_` schema. Scripting only: no user-facing commands besides --dsl and the schema/version queries.
+// behind an lmscript `_dsl_` schema. Scripting only: no user-facing commands besides --lmcode and the schema/version queries.
 #include <cmath>
 #include <cstdio>
 #include <fstream>
@@ -493,7 +493,7 @@ void register_host(dslvm::Registry &r, Host &h) {
   });
 }
 
-const char *usage = "usage: lmweather --version | --notices | --dsl-schema [--json] | --dsl-signatures | [--dry-run] --dsl FILE [FILE ...]\n"
+const char *usage = "usage: lmweather --version | --notices | --lmcode-schema [--json] | --lmcode-signatures | [--dry-run] --lmcode FILE [FILE ...]\n"
                     "environment: LMWEATHER_MAX_MEMORY_MB  total memory budget in MiB (default 4096); a program that needs more\n"
                     "             stops with a run error (exit 3) instead of allocating\n";
 }  // namespace
@@ -512,7 +512,7 @@ int main(int argc, char **argv) {
     std::cout.write(reinterpret_cast<const char *>(lmweather::embedded_notices), (std::streamsize)lmweather::embedded_notices_size);
     return 0;
   }
-  if (argc >= 2 && a1 == "--dsl-schema") {
+  if (argc >= 2 && a1 == "--lmcode-schema") {
     if (argc == 2) { for (const auto &s : reg.signatures()) std::cout << s << '\n'; return 0; }
     if (argc == 3 && std::string(argv[2]) == "--json") {
       std::cout.write(reinterpret_cast<const char *>(lmweather::embedded_schema), (std::streamsize)lmweather::embedded_schema_size);
@@ -521,11 +521,11 @@ int main(int argc, char **argv) {
     std::cerr << usage;
     return 2;
   }
-  if (argc == 2 && a1 == "--dsl-signatures") { for (const auto &s : reg.signatures()) std::cout << s << '\n'; return 0; }
+  if (argc == 2 && a1 == "--lmcode-signatures") { for (const auto &s : reg.signatures()) std::cout << s << '\n'; return 0; }
   bool dry = false;
   int dsl_arg = 1;
   if (argc > 1 && a1 == "--dry-run") { dry = true; ++dsl_arg; }
-  if (argc <= dsl_arg || std::string(argv[dsl_arg]) != "--dsl") { std::cerr << usage; return 2; }
+  if (argc <= dsl_arg || std::string(argv[dsl_arg]) != "--lmcode") { std::cerr << usage; return 2; }
   std::vector<std::string> files;
   for (int i = dsl_arg + 1; i < argc; i++) {
     if (std::string(argv[i]) == "--dry-run") {

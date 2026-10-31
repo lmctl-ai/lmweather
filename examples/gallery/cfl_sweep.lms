@@ -47,7 +47,7 @@ wx.save_text("data/cfl_sweep.csv", rows);
 wx.save_text("data/cfl_limit.csv", str(limit) + " 0.0001\n" + str(limit) + " 100\n");
 end _lmcode_
 savedsl(sim, "data/cfl_sweep-sim.dslb");
-r = system ${dsl_cli(sim)} --dsl data/cfl_sweep-sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode data/cfl_sweep-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 # a step above the limit: the host refuses before taking it
@@ -56,7 +56,7 @@ let s = wx.sphere(21).williamson6();
 s.run_dt(86400.0, 2000.0);
 end _lmcode_
 savedsl(over, "data/cfl_sweep-over.dslb");
-r = system ${dsl_cli(over)} --dsl data/cfl_sweep-over.dslb;
+r = system ${dsl_cli(over)} --lmcode data/cfl_sweep-over.dslb;
 assert(r.code != 0, "a 2000 s step should have been refused");
 println("dt = 2000 s: " + r.stdout);
 
@@ -72,6 +72,6 @@ plot.cmd("plot 'data/cfl_limit.csv' u 1:2 w l lw 2 dt 2 lc rgb '#d62728' notitle
 plot.close();
 end _lmcode_
 savedsl(draw, "data/cfl_sweep-draw.dslb");
-r = system ${dsl_cli(draw)} --dsl data/cfl_sweep-draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode data/cfl_sweep-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote images/cfl_sweep.png");

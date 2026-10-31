@@ -2,7 +2,7 @@
 
 One context, `wx: Wx`. Object types: `Sphere`, `Plane`. `schema/lmweather.dsl.json` is generated from the `method(r, ...)`
 registrations in `cpp/main.cpp` by `scripts/gen-schema.py`; `test.sh` fails when it is stale and diffs it against
-`lmscript --dsl-signatures`.
+`lmscript --lmcode-signatures`.
 
 Conventions: SI units. Angles at the API (lat, lon of `*_at`, `wave_crest` results, CSV columns) are degrees; `tilt`, `williamson2(alpha)`
 take radians; expressions use radians. Builder methods return the receiver. Setting state (`williamson2`, `williamson6`,

@@ -38,7 +38,7 @@ writes `images/rossby_dispersion.png` in about 30 s. The `install=` binding down
 on first use (Linux binaries require dynamic glibc >= 2.35, Ubuntu 22.04+); binaries already on `PATH` take priority. From a checkout, `examples/render-all.sh` regenerates `docs/images/`.
 
 It is a scripting host, not a command-line tool: write an [lmscript](https://lmctl.com/tools/lmscript/skill.html) `_dsl_` block,
-compile it, run it with `lmweather --dsl`. No Fortran, no NetCDF, no MPI, no data files, no shared libraries. (It is not WRF; see *Scope*.)
+compile it, run it with `lmweather --lmcode`. No Fortran, no NetCDF, no MPI, no data files, no shared libraries. (It is not WRF; see *Scope*.)
 
 ```
 # rh.lms: the Rossby-Haurwitz wave (Williamson test case 6) drifts east; mass and energy are conserved
@@ -53,7 +53,7 @@ wx.assert_close(s.energy() / e0, 1.0, 0.0001);
 s.save_csv("rh_day7.csv");                           # lon lat h u v zeta, ready for gnuplot pm3d
 end _lmcode_
 savedsl(p, "rh.dslb");
-system ${dsl_cli(p)} --dsl rh.dslb;
+system ${dsl_cli(p)} --lmcode rh.dslb;
 ```
 
 `lmscript rh.lms` finds `lmweather` on `PATH` or downloads the release binary for your platform on first use,

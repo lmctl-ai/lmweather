@@ -20,7 +20,7 @@ wx.print("after 52.5 h the Kelvin crest at x0 + c t is " + str(h_kelvin) + " m h
 wx.assert_true(h_kelvin > 2.0);
 end _lmcode_
 savedsl(sim, "data/kelvin_anim-sim.dslb");
-r = system ${dsl_cli(sim)} --dsl data/kelvin_anim-sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode data/kelvin_anim-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -36,7 +36,7 @@ for (k in range(0, 36)) {
 }
 end _lmcode_
 savedsl(draw, "data/kelvin_anim-draw.dslb");
-r = system ${dsl_cli(draw)} --dsl data/kelvin_anim-draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode data/kelvin_anim-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 r = system ffmpeg -y -loglevel error -framerate 8 -i data/kelvin_frames/f%d.png -vf "split[a][b];[a]palettegen=max_colors=96[p];[b][p]paletteuse=dither=none" images/kelvin_anim.gif;
 assert(r.code == 0, r.stderr);

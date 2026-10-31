@@ -28,7 +28,7 @@ for (m in range(1, 11)) {
 wx.save_text("data/jet_growth.csv", rows);
 end _lmcode_
 savedsl(sim, "data/jet_growth_rate-sim.dslb");
-r = system ${dsl_cli(sim)} --dsl data/jet_growth_rate-sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode data/jet_growth_rate-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 prof = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
@@ -45,7 +45,7 @@ for (j in range(0, 161)) {
 wx.save_text("data/jet_profile.csv", prof);
 end _lmcode_
 savedsl(prof, "data/jet_growth_rate-prof.dslb");
-r = system ${dsl_cli(prof)} --dsl data/jet_growth_rate-prof.dslb;
+r = system ${dsl_cli(prof)} --lmcode data/jet_growth_rate-prof.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -65,6 +65,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(draw, "data/jet_growth_rate-draw.dslb");
-r = system ${dsl_cli(draw)} --dsl data/jet_growth_rate-draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode data/jet_growth_rate-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote images/jet_growth_rate.png");

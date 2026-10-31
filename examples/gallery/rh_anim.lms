@@ -17,7 +17,7 @@ wx.assert_close(s.energy() / e0, 1.0, 0.0005);
 wx.print("14-day energy ratio: " + str(s.energy() / e0));
 end _lmcode_
 savedsl(sim, "data/rh_anim-sim.dslb");
-r = system ${dsl_cli(sim)} --dsl data/rh_anim-sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode data/rh_anim-sim.dslb;
 assert(r.code == 0);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -33,7 +33,7 @@ for (k in range(0, 56)) {
 }
 end _lmcode_
 savedsl(draw, "data/rh_anim-draw.dslb");
-r = system ${dsl_cli(draw)} --dsl data/rh_anim-draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode data/rh_anim-draw.dslb;
 assert(r.code == 0);
 r = system ffmpeg -y -loglevel error -framerate 12 -i data/rh_frames/f%d.png -vf "split[a][b];[a]palettegen=max_colors=96[p];[b][p]paletteuse=dither=none" images/rh_anim.gif;
 assert(r.code == 0);

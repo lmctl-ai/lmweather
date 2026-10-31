@@ -14,5 +14,5 @@ Layout: `cpp/sphere.*` (FFT, Gauss-Legendre, Legendre functions, transforms, RK4
 `cpp/main.cpp` (DSL registrations, context `wx: Wx`), `cpp/expr.hpp` (expression strings, copied from lmnum),
 `tests/core.cpp` (native ctest), `tests/*.lms` and `examples/*.lms` (programs that assert), `data/` none.
 
-Scripting only: `--dsl [--dry-run]`, `--version` (exactly `lmweather X.Y.Z`), `--notices`, `--dsl-schema [--json]`,
-`--dsl-signatures`; exit 2 usage, 3 load/run error. One thread, own code only: runs are reproducible bit for bit.
+Scripting only: `--lmcode [--dry-run]`, `--version` (exactly `lmweather X.Y.Z`), `--notices`, `--lmcode-schema [--json]`,
+`--lmcode-signatures`; exit 2 usage, 3 load/run error. One thread, own code only: runs are reproducible bit for bit.

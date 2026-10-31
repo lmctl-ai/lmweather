@@ -35,7 +35,7 @@ wx.assert_true(h_kelvin > 3.0);
 wx.assert_true(h_rossby > 1.0);
 end _lmcode_
 savedsl(sim, "data/equatorial_kelvin-sim.dslb");
-r = system ${dsl_cli(sim)} --dsl data/equatorial_kelvin-sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode data/equatorial_kelvin-sim.dslb;
 assert(r.code == 0);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -56,6 +56,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(draw, "data/equatorial_kelvin-draw.dslb");
-r = system ${dsl_cli(draw)} --dsl data/equatorial_kelvin-draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode data/equatorial_kelvin-draw.dslb;
 assert(r.code == 0);
 println("wrote images/equatorial_kelvin.png");

@@ -30,6 +30,7 @@ if [ ! -f "$BUILD_DIR/CMakeCache.txt" ] && command -v ninja >/dev/null 2>&1; the
 cmake -S . -B "$BUILD_DIR" $GEN -DCMAKE_BUILD_TYPE=Release >/dev/null
 cmake --build "$BUILD_DIR" --parallel "${BUILD_JOBS:-4}" >"$WORK/build.log" 2>&1 || { tail -40 "$WORK/build.log" >&2; fail "build"; }
 ok "build"
+python3 tests/check-host-flags.py schema/lmweather.dsl.json "$HOST" || fail "hard host flag cutover"
 ctest --test-dir "$BUILD_DIR" --output-on-failure || fail "native physics core tests"
 ok "native physics core regression tests"
 want_version="lmweather $(sed -n 's/^project(lmweather VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
@@ -38,10 +39,10 @@ want_version="lmweather $(sed -n 's/^project(lmweather VERSION \([0-9.]*\).*/\1/
 ok "--version prints exactly '$want_version'"
 python3 scripts/gen-schema.py >/dev/null && git diff --quiet -- schema/lmweather.dsl.json 2>/dev/null || [ ! -e .git ] || fail "schema/lmweather.dsl.json is stale: run scripts/gen-schema.py"
 ok "schema matches the registrations in cpp/main.cpp"
-"$HOST" --dsl-schema --json >"$WORK/schema.json" || fail "embedded schema print"
+"$HOST" --lmcode-schema --json >"$WORK/schema.json" || fail "embedded schema print"
 cmp -s "$WORK/schema.json" schema/lmweather.dsl.json || fail "embedded schema differs from schema/lmweather.dsl.json"
-ok "--dsl-schema --json prints byte-identical embedded schema bytes"
-diff -u <("$LMSCRIPT" --dsl-signatures schema/lmweather.dsl.json) <("$HOST" --dsl-signatures) || fail "host/compiler signatures differ"
+ok "--lmcode-schema --json prints byte-identical embedded schema bytes"
+diff -u <("$LMSCRIPT" --lmcode-signatures schema/lmweather.dsl.json) <("$HOST" --lmcode-signatures) || fail "host/compiler signatures differ"
 ok "host registry matches compiler signatures"
 "$HOST" --notices >"$WORK/notices.txt" || fail "--notices"
 grep -q "Lattice Systems" "$WORK/notices.txt" || fail "--notices missing third-party text"
@@ -79,10 +80,10 @@ for src in tests/*.lms examples/*.lms; do
   "$LMSCRIPT" "$src" "build/$name.dslb" >"$WORK/$name.log" 2>&1 || { cat "$WORK/$name.log" >&2; fail "$name compile"; }
   n=$((n+1))
 done
-ok "$n programs compile as bytecode v5"
+ok "$n programs compile as bytecode v6"
 for src in tests/*.lms examples/*.lms; do
   name="$(basename "$src" .lms)"
-  "$HOST" --dsl "build/$name.dslb" >"$WORK/$name.out" 2>"$WORK/$name.err" || { cat "$WORK/$name.out" "$WORK/$name.err" >&2; fail "$name run"; }
+  "$HOST" --lmcode "build/$name.dslb" >"$WORK/$name.out" 2>"$WORK/$name.err" || { cat "$WORK/$name.out" "$WORK/$name.err" >&2; fail "$name run"; }
   grep -q '"ok": true' "$WORK/$name.out" || { cat "$WORK/$name.out" >&2; fail "$name did not report ok"; }
 done
 ok "$n programs run and pass their own assertions"
@@ -91,7 +92,7 @@ ok "$n programs run and pass their own assertions"
 for f in build/*.csv build/examples/*.csv; do echo "$(sha "$f") $f"; done >"$WORK/before.txt"
 for src in tests/determinism.lms examples/*.lms; do
   name="$(basename "$src" .lms)"
-  "$HOST" --dsl "build/$name.dslb" >/dev/null 2>&1 || fail "$name rerun"
+  "$HOST" --lmcode "build/$name.dslb" >/dev/null 2>&1 || fail "$name rerun"
 done
 for f in build/*.csv build/examples/*.csv; do echo "$(sha "$f") $f"; done >"$WORK/after.txt"
 cmp -s "$WORK/before.txt" "$WORK/after.txt" || fail "result files differ on rerun"
@@ -116,7 +117,7 @@ end _dsl_
 savedsl(p, "$WORK/$1.dslb");
 LMS
   "$LMSCRIPT" "$WORK/$1.lms" >/dev/null 2>"$WORK/$1.cerr" || { cat "$WORK/$1.cerr" >&2; fail "$1 compile"; }
-  set +e; out="$("$HOST" --dsl "$WORK/$1.dslb" 2>/dev/null)"; code=$?; set -e
+  set +e; out="$("$HOST" --lmcode "$WORK/$1.dslb" 2>/dev/null)"; code=$?; set -e
   [ "$code" = 3 ] || fail "$1: exit code $code, expected 3 ($out)"
   echo "$out" | grep -q "$3" || fail "$1: message lacks '$3': $out"
 }
@@ -179,15 +180,15 @@ LMS
 budget_program runaway 'wx.plane(4000, 2000, 1000000.0, 1000000.0)'
 budget_program runaway_sphere 'wx.sphere(170)'
 for prog in runaway runaway_sphere; do
-  set +e; out="$(LMWEATHER_MAX_MEMORY_MB=64 "$HOST" --dsl "$WORK/$prog.dslb" 2>"$WORK/$prog.err")"; code=$?; set -e
+  set +e; out="$(LMWEATHER_MAX_MEMORY_MB=64 "$HOST" --lmcode "$WORK/$prog.dslb" 2>"$WORK/$prog.err")"; code=$?; set -e
   [ "$code" = 3 ] || fail "$prog loop under LMWEATHER_MAX_MEMORY_MB=64: exit $code, expected 3 ($out)"
   echo "$out" | grep -q "memory budget exceeded" || fail "$prog loop: JSON lacks the budget message: $out"
   grep -q "LMWEATHER_MAX_MEMORY_MB" "$WORK/$prog.err" || fail "$prog loop: no budget message on stderr"
 done
-set +e; LMWEATHER_MAX_MEMORY_MB=-5 "$HOST" --dsl "$WORK/runaway.dslb" >/dev/null 2>"$WORK/badenv.err"; code=$?; set -e
+set +e; LMWEATHER_MAX_MEMORY_MB=-5 "$HOST" --lmcode "$WORK/runaway.dslb" >/dev/null 2>"$WORK/badenv.err"; code=$?; set -e
 [ "$code" = 2 ] && grep -q "positive whole number" "$WORK/badenv.err" || fail "bad LMWEATHER_MAX_MEMORY_MB: exit $code"
 if [ "$UNAME_S" = Linux ]; then
-  set +e; out="$(ulimit -v 6291456; "$HOST" --dsl "$WORK/runaway.dslb" 2>/dev/null)"; code=$?; set -e
+  set +e; out="$(ulimit -v 6291456; "$HOST" --lmcode "$WORK/runaway.dslb" 2>/dev/null)"; code=$?; set -e
   [ "$code" = 3 ] && echo "$out" | grep -q "limit 4096 MiB" || fail "runaway loop with the default budget under ulimit -v 6 GiB: exit $code ($out)"
   ok "memory budget: runaway plane and T170 sphere loops stop at 64 MiB, the plane loop also at the default 4096 MiB (under ulimit -v 6 GiB)"
 else
@@ -237,12 +238,12 @@ fi
 
 # Dry run loads/verifies bytecode without executing the simulation or writing CSV.
 rm -f build/examples/williamson2_errors.csv
-"$HOST" --dry-run --dsl build/williamson2.dslb >"$WORK/dry.out" || fail "dry run"
+"$HOST" --dry-run --lmcode build/williamson2.dslb >"$WORK/dry.out" || fail "dry run"
 [ ! -e build/examples/williamson2_errors.csv ] || fail "dry run created CSV"
-"$HOST" --dsl build/williamson2.dslb >/dev/null || fail "restore example CSV"
+"$HOST" --lmcode build/williamson2.dslb >/dev/null || fail "restore example CSV"
 ok "dry run verifies without writing outputs"
 
-for flags in '--unknown' '--version extra' '--dsl-schema --bogus' '--dry-run' '--dsl --bogus'; do
+for flags in '--unknown' '--version extra' '--lmcode-schema --bogus' '--dry-run' '--lmcode --bogus'; do
   set +e
   # Deliberate word splitting: each fixed test string is a CLI argument sequence.
   # shellcheck disable=SC2086
@@ -253,16 +254,16 @@ for flags in '--unknown' '--version extra' '--dsl-schema --bogus' '--dry-run' '-
 done
 ok "invalid CLI combinations use exit 2"
 
-set +e; "$HOST" --dsl "$WORK/does-not-exist.dslb" >/dev/null 2>&1; code=$?; set -e
+set +e; "$HOST" --lmcode "$WORK/does-not-exist.dslb" >/dev/null 2>&1; code=$?; set -e
 [ "$code" = 3 ] || fail "missing bytecode exit code $code, expected 3"
 set +e; "$HOST" >/dev/null 2>&1; code=$?; set -e
 [ "$code" = 2 ] || fail "usage exit code $code, expected 2"
 ok "usage and load errors use exit codes 2 and 3"
 
 # The published compiler injects std; the host embeds only its own schema bytes.
-"$LMSCRIPT" --dsl-signatures schema/lmweather.dsl.json --without-std > "$WORK/std-host-only.sig"
-"$LMSCRIPT" --dsl-signatures cpp/std/lmcode-std.schema.json > "$WORK/std-builtins.sig"
-"$HOST" --dsl-signatures > "$WORK/std-registry.sig"
+"$LMSCRIPT" --lmcode-signatures schema/lmweather.dsl.json --without-std > "$WORK/std-host-only.sig"
+"$LMSCRIPT" --lmcode-signatures cpp/std/lmcode-std.schema.json > "$WORK/std-builtins.sig"
+"$HOST" --lmcode-signatures > "$WORK/std-registry.sig"
 python3 - "$WORK" <<'PYSTD'
 import pathlib,sys,json
 w=pathlib.Path(sys.argv[1])
@@ -273,7 +274,7 @@ out=str(w/'std-probe.dslb').replace('\\','/')
 (w/'std-probe.lms').write_text('p = _lmcode_ schema='+json.dumps(schema)+';\nlet values = str_list().add("abc");\nif (str_len(values.at(0)) != 3) { let bad = int_list().at(0); }\nend _lmcode_\nsavedsl(p, '+json.dumps(out)+');\n')
 PYSTD
 "$LMSCRIPT" "$WORK/std-probe.lms" > "$WORK/std-probe.log" 2>&1 || { cat "$WORK/std-probe.log"; fail "implicit std compile"; }
-"$HOST" --dsl "$WORK/std-probe.dslb" > "$WORK/std-run.log" 2>&1 || { cat "$WORK/std-run.log"; fail "implicit std runtime"; }
+"$HOST" --lmcode "$WORK/std-probe.dslb" > "$WORK/std-run.log" 2>&1 || { cat "$WORK/std-run.log"; fail "implicit std runtime"; }
 ok "host-only signatures and implicit std runtime"
 
 echo "all $pass checks passed"

@@ -15,7 +15,7 @@ wx.assert_close(s.mean_height(), m0, 0.000000001);
 wx.print("day 15: max wind " + str(s.max_wind()) + " m/s");
 end _lmcode_
 savedsl(sim, "data/mountain_anim-sim.dslb");
-r = system ${dsl_cli(sim)} --dsl data/mountain_anim-sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode data/mountain_anim-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -31,7 +31,7 @@ for (k in range(0, 45)) {
 }
 end _lmcode_
 savedsl(draw, "data/mountain_anim-draw.dslb");
-r = system ${dsl_cli(draw)} --dsl data/mountain_anim-draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode data/mountain_anim-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 r = system ffmpeg -y -loglevel error -framerate 9 -i data/mountain_frames/f%d.png -vf "split[a][b];[a]palettegen=max_colors=96[p];[b][p]paletteuse=dither=none" images/mountain_anim.gif;
 assert(r.code == 0, r.stderr);

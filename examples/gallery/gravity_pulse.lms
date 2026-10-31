@@ -38,7 +38,7 @@ for (step in range(0, 65)) {
 wx.save_text("data/pulse_hov.csv", hov);
 end _lmcode_
 savedsl(sim, "data/gravity_pulse-sim.dslb");
-r = system ${dsl_cli(sim)} --dsl data/gravity_pulse-sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode data/gravity_pulse-sim.dslb;
 assert(r.code == 0);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -56,6 +56,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(draw, "data/gravity_pulse-draw.dslb");
-r = system ${dsl_cli(draw)} --dsl data/gravity_pulse-draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode data/gravity_pulse-draw.dslb;
 assert(r.code == 0);
 println("wrote images/gravity_pulse.png");

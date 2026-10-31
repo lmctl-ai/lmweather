@@ -15,7 +15,7 @@
 
 `examples/gallery/*.lms` each compute with `lmweather`, write CSV into `data/`, and draw with `lmplot` into `images/` in the
 *current directory*; the README gallery shows copies in `docs/images/` (`examples/render-all.sh` runs them from a checkout and copies;
-PNG <= 300 KB, GIF <= 3 MB). Every example, old and new, ends with `r = system ${dsl_cli(p)} --dsl ${out}; assert(r.code == 0);`
+PNG <= 300 KB, GIF <= 3 MB). Every example, old and new, ends with `r = system ${dsl_cli(p)} --lmcode ${out}; assert(r.code == 0);`
 so `lmctl autorun <raw github url>` produces the output, not just bytecode. README captions include the `lmctl autorun` command.
 - Stories: Rossby-Haurwitz wave 4 (still T42 map and 56-frame 14-day GIF via ffmpeg palette), equatorial beta-plane Kelvin wave and
   off-equatorial n = 1 Rossby lobes (ENSO warm-pool pulse), mid-latitude barotropic jet instability and vorticity roll-up on the sphere,

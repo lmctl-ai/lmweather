@@ -17,7 +17,7 @@ wx.assert_close(s.mean_height(), m0, 0.000000001);
 wx.assert_close(s.energy() / e0, 1.0, 0.000000001);
 end _lmcode_
 savedsl(sim, "data/williamson2-sim.dslb");
-r = system ${dsl_cli(sim)} --dsl data/williamson2-sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode data/williamson2-sim.dslb;
 assert(r.code == 0);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -31,6 +31,6 @@ plot.cmd("splot 'data/williamson2_day5.csv' using 1:2:3 with pm3d");
 plot.close();
 end _lmcode_
 savedsl(draw, "data/williamson2-draw.dslb");
-r = system ${dsl_cli(draw)} --dsl data/williamson2-draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode data/williamson2-draw.dslb;
 assert(r.code == 0);
 println("wrote images/williamson2.png");

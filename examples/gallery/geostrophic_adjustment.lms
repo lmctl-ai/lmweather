@@ -60,7 +60,7 @@ wx.assert_close(avg_center, pred_center, 0.01);
 wx.assert_close(m.pv_anomaly_rms() / q0, 1.0, 0.001);
 end _lmcode_
 savedsl(sim, "data/geostrophic_adjustment-sim.dslb");
-r = system ${dsl_cli(sim)} --dsl data/geostrophic_adjustment-sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode data/geostrophic_adjustment-sim.dslb;
 assert(r.code == 0);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -77,6 +77,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(draw, "data/geostrophic_adjustment-draw.dslb");
-r = system ${dsl_cli(draw)} --dsl data/geostrophic_adjustment-draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode data/geostrophic_adjustment-draw.dslb;
 assert(r.code == 0);
 println("wrote images/geostrophic_adjustment.png");

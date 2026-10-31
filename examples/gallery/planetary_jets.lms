@@ -26,7 +26,7 @@ wx.assert_close(fast.mean_height(), m_fast, 0.000001);
 wx.assert_true(fast.max_wind() > 15.0);
 end _lmcode_
 savedsl(sim, "data/planetary_jets-sim.dslb");
-r = system ${dsl_cli(sim)} --dsl data/planetary_jets-sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode data/planetary_jets-sim.dslb;
 assert(r.code == 0);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -39,6 +39,6 @@ plot.cmd("plot 0 w l lw 1 lc rgb '#999999' notitle, 'data/planet_slow_zonal.csv'
 plot.close();
 end _lmcode_
 savedsl(draw, "data/planetary_jets-draw.dslb");
-r = system ${dsl_cli(draw)} --dsl data/planetary_jets-draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode data/planetary_jets-draw.dslb;
 assert(r.code == 0);
 println("wrote images/planetary_jets.png");

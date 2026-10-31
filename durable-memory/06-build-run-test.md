@@ -11,3 +11,7 @@ Measured 2026-10-23, x86_64 Linux (WSL2), 4 cores, GCC, Ninja.
   asserts; 17 CSV files byte-identical on rerun; 22 error snippets exit 3 with a message naming the problem; the two
   lmweather+lmplot pipelines when `lmplot` is on `PATH` or `LMWEATHER_TEST_NETWORK=1`; dry run writes nothing; usage exit codes.
 - Run a program by hand: `lmscript examples/williamson2.lms` (compiles, binds to `lmweather` on PATH).
+
+## Native host flag contract
+
+The host accepts only the lmcode option family, with no retired aliases. The full gate checks exact schema/signature output, new loader routing and rejection before file effects in scratch HOME. SDK20325f7 is synchronized through the owner script for actual source-compiler v6 capabilities; package metadata alone is insufficient. Internal DSLB and .dslb names remain.

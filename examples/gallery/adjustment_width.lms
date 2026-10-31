@@ -56,7 +56,7 @@ for (i in range(0, 5)) {
 wx.save_text("data/adjustment_width.csv", rows);
 end _lmcode_
 savedsl(sim, "data/adjustment_width-sim.dslb");
-r = system ${dsl_cli(sim)} --dsl data/adjustment_width-sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode data/adjustment_width-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -69,6 +69,6 @@ plot.cmd("plot 'data/adjustment_width.csv' u 1:3 w l lw 2.5 lc rgb '#1f77b4' t '
 plot.close();
 end _lmcode_
 savedsl(draw, "data/adjustment_width-draw.dslb");
-r = system ${dsl_cli(draw)} --dsl data/adjustment_width-draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode data/adjustment_width-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote images/adjustment_width.png");

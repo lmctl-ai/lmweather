@@ -26,7 +26,7 @@ diff = diff - floor(diff / lx + 0.5) * lx;      # crests repeat every wavelength
 wx.assert_close(diff, 0.0, 60000.0);
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 assert(r.code == 0, r.stdout + r.stderr);
 println(r.stdout);
 println(f"wrote {out}");
