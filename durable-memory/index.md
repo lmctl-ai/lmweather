@@ -10,5 +10,6 @@
 - `08-examples.md` — the example programs and what they taught.
 - `09-open-items.md` — what is not done.
 - `10-resource-limits.md` — the total memory budget (`LMWEATHER_MAX_MEMORY_MB`) and how it is counted.
+- `11-invocation-envelope.md` — the one-envelope host answer: cli/load/run/app phases, dry mode, and the compiler probe.
 
-Compiler >=0.2.420 resolves std from the pinned SDK bundle by default; host schema bytes remain host-only, with full and `--without-std` parity plus a standard-only runtime probe in `test.sh`.
+A current-protocol compiler (staging; select-compiler.sh refuses older ones whose invocation file lacks the boolean dry field) resolves std from the pinned SDK bundle by default; host schema bytes remain host-only, with full and `--without-std` parity plus a standard-only runtime probe in `test.sh`.

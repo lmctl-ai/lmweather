@@ -25,9 +25,8 @@ fast.save_zonal_mean("data/planet_fast_zonal.csv");
 wx.assert_close(fast.mean_height(), m_fast, 0.000001);
 wx.assert_true(fast.max_wind() > 15.0);
 end _lmcode_
-savedsl(sim, "data/planetary_jets-sim.dslb");
-r = system ${dsl_cli(sim)} --lmcode data/planetary_jets-sim.dslb;
-assert(r.code == 0);
+r = run_lmcode(sim);
+assert(r.ok);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/planetary_jets.png", 920, 480);
@@ -38,7 +37,6 @@ plot.cmd("set xrange [-90:90]; set xtics 30; set yrange [-30:35]; set key top ri
 plot.cmd("plot 0 w l lw 1 lc rgb '#999999' notitle, 'data/planet_slow_zonal.csv' u 1:3 w l lw 2.8 lc rgb '#1f77b4' t 'slow rotator (0.5 Omega_E): 3 broad jets', 'data/planet_fast_zonal.csv' u 1:3 w l lw 2.8 lc rgb '#d62728' t 'fast rotator (4.0 Omega_E): 6 banded jets'");
 plot.close();
 end _lmcode_
-savedsl(draw, "data/planetary_jets-draw.dslb");
-r = system ${dsl_cli(draw)} --lmcode data/planetary_jets-draw.dslb;
-assert(r.code == 0);
+r = run_lmcode(draw);
+assert(r.ok);
 println("wrote images/planetary_jets.png");

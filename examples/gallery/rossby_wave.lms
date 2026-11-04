@@ -28,9 +28,8 @@ let diff = shift - cp * 864000.0;
 diff = diff - floor(diff / lx + 0.5) * lx;
 wx.assert_close(diff, 0.0, 50000.0);
 end _lmcode_
-savedsl(sim, "data/rossby_wave-sim.dslb");
-r = system ${dsl_cli(sim)} --lmcode data/rossby_wave-sim.dslb;
-assert(r.code == 0);
+r = run_lmcode(sim);
+assert(r.ok);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/rossby_wave.png", 900, 580);
@@ -47,7 +46,6 @@ plot.cmd("plot 'data/rossby_row0.csv' u ($1/1000.0):($2-1000.0) w l lw 2.4 lc rg
 plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
-savedsl(draw, "data/rossby_wave-draw.dslb");
-r = system ${dsl_cli(draw)} --lmcode data/rossby_wave-draw.dslb;
-assert(r.code == 0);
+r = run_lmcode(draw);
+assert(r.ok);
 println("wrote images/rossby_wave.png");

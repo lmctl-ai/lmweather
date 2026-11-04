@@ -25,9 +25,8 @@ wx.assert_close(s.energy() / e0, 1.0, 0.0001);
 wx.assert_true(prev > 140.0);
 wx.print("14-day eastward crest drift at 45N: " + str(prev) + " deg");
 end _lmcode_
-savedsl(sim, "data/rossby_haurwitz-sim.dslb");
-r = system ${dsl_cli(sim)} --lmcode data/rossby_haurwitz-sim.dslb;
-assert(r.code == 0);
+r = run_lmcode(sim);
+assert(r.ok);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/rossby_haurwitz.png", 900, 520);
@@ -39,7 +38,6 @@ plot.cmd("set xlabel 'longitude [deg]'; set ylabel 'latitude [deg]'");
 plot.cmd("splot 'data/rh_day7.csv' using 1:2:3 with pm3d");
 plot.close();
 end _lmcode_
-savedsl(draw, "data/rossby_haurwitz-draw.dslb");
-r = system ${dsl_cli(draw)} --lmcode data/rossby_haurwitz-draw.dslb;
-assert(r.code == 0);
+r = run_lmcode(draw);
+assert(r.ok);
 println("wrote images/rossby_haurwitz.png");

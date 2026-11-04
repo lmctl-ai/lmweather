@@ -1,7 +1,6 @@
 # Kinetic energy by zonal harmonic: a wave u = U cos(k x) carries U^2/4 of mean kinetic energy per unit mass in harmonic 1
 # and nothing elsewhere; v = V sin(2 k x) adds V^2/4 to harmonic 2; the sum over harmonics is the mean of |v|^2/2 for a
 # field without zonal mean. Under an instability the energy of one harmonic grows at twice the amplitude growth rate.
-out = ARGV.len() > 0 ? ARGV[0] : "build/plane_harmonic.dslb";
 p = _lmcode_ cli="lmweather";
 let w = wx.plane(64, 16, 1000000.0, 250000.0).depth(100.0).linear();
 w.fields("0", "3.0 * cos(2 * pi * x / lx)", "0");
@@ -26,4 +25,6 @@ let c = g.wave_speed();
 g.run(0.5 * 3.141592653589793 / (c * 2.0 * 3.141592653589793 / 2000000.0));
 wx.assert_close(g.harmonic_energy(1), (c / 100.0) * (c / 100.0) / 4.0, 0.001);
 end _lmcode_
-savedsl(p, out);
+r = run_lmcode(p);
+println(json_stringify(r));
+require(r.ok, "plane_harmonic failed");

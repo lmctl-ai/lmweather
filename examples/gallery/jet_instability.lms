@@ -22,9 +22,8 @@ wx.print("day 3.5 max |v| on jet axis: " + str(vmax) + " m/s");
 wx.assert_close(m.mean_depth(), d0, 0.000001);
 wx.assert_true(vmax > 12.0);
 end _lmcode_
-savedsl(sim, "data/jet_instability-sim.dslb");
-r = system ${dsl_cli(sim)} --lmcode data/jet_instability-sim.dslb;
-assert(r.code == 0);
+r = run_lmcode(sim);
+assert(r.ok);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/jet_instability.png", 900, 520);
@@ -36,7 +35,6 @@ plot.cmd("set xlabel 'x [km]'; set ylabel 'y [km]'");
 plot.cmd("plot 'data/jet_rollup.csv' using ($1/1000.0):($2/1000.0):($6*100000.0) with image notitle");
 plot.close();
 end _lmcode_
-savedsl(draw, "data/jet_instability-draw.dslb");
-r = system ${dsl_cli(draw)} --lmcode data/jet_instability-draw.dslb;
-assert(r.code == 0);
+r = run_lmcode(draw);
+assert(r.ok);
 println("wrote images/jet_instability.png");

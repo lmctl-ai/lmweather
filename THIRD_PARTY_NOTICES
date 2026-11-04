@@ -1,4 +1,4 @@
-Third-party notices for lmweather 0.1.3
+Third-party notices for lmweather 0.1.4
 =======================================
 
 lmweather's own code (cpp/, schema/, scripts/, examples/, tests/; including the vendored `cpp/dslvm.hpp`

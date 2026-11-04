@@ -15,8 +15,8 @@
 
 `examples/gallery/*.lms` each compute with `lmweather`, write CSV into `data/`, and draw with `lmplot` into `images/` in the
 *current directory*; the README gallery shows copies in `docs/images/` (`examples/render-all.sh` runs them from a checkout and copies;
-PNG <= 300 KB, GIF <= 3 MB). Every example, old and new, ends with `r = system ${dsl_cli(p)} --lmcode ${out}; assert(r.code == 0);`
-so `lmctl autorun <raw github url>` produces the output, not just bytecode. README captions include the `lmctl autorun` command.
+PNG <= 300 KB, GIF <= 3 MB). Every example, old and new, ends with `r = run_lmcode(p); require(r.ok, ...)`
+so `lmctl autorun <raw github url>` produces the output; there are no saved bytecode files anymore. README captions include the `lmctl autorun` command.
 - Stories: Rossby-Haurwitz wave 4 (still T42 map and 56-frame 14-day GIF via ffmpeg palette), equatorial beta-plane Kelvin wave and
   off-equatorial n = 1 Rossby lobes (ENSO warm-pool pulse), mid-latitude barotropic jet instability and vorticity roll-up on the sphere,
   Rossby geostrophic adjustment against the Fourier-cosine potential-vorticity prediction, beta-plane Rossby wave westward phase drift,
@@ -28,7 +28,7 @@ so `lmctl autorun <raw github url>` produces the output, not just bytecode. READ
   wavenumber (`Plane.harmonic_energy`, Lipps 1962 cutoff kL = 2), decaying turbulence n^-3 spectrum (`save_spectrum`),
   Rossby dispersion relation measured for m = 1..7, adjustment width study L/Ld = 0.25..4, equatorial Kelvin GIF.
 - `test.sh` checks README images (magic bytes, sizes) and runs the gallery when `lmplot` is available (`*_anim` only with `ffmpeg`).
-- The five plain `examples/*.lms` capture the host's stdout (`r = system ...`) and echo it, so `lmctl autorun` shows the
-  checked numbers; without the echo a first-time visitor saw only "wrote build/x.dslb".
+- The five plain `examples/*.lms` print only what the block itself prints via `wx.print` (the run_lmcode
+  envelope forwards host stdout lines through), so `lmctl autorun` shows the checked numbers.
 - Figure hygiene learned the hard way: multiplot panel titles above ~55 characters clip at 1000 px; keys with long
   entries overflow a half-width panel (shorten the titles, or `set key below`); check every PNG and a late GIF frame.

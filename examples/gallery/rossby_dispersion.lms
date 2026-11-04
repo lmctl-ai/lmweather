@@ -44,9 +44,8 @@ for (m in range(1, 8)) {
 wx.save_text("data/rossby_dispersion.csv", rows);
 wx.save_text("data/rossby_params.csv", str(ld) + " " + str(l) + " " + str(beta) + "\n");
 end _lmcode_
-savedsl(sim, "data/rossby_dispersion-sim.dslb");
-r = system ${dsl_cli(sim)} --lmcode data/rossby_dispersion-sim.dslb;
-assert(r.code == 0, r.stdout + r.stderr);
+r = run_lmcode(sim);
+require(r.ok, "run failed");
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/rossby_dispersion.png", 900, 560);
@@ -58,7 +57,6 @@ plot.cmd("beta = 2e-11; l = pi / 3e6; ld = 990515.0");
 plot.cmd("plot -beta / ((x * 1e-6) ** 2 + l ** 2 + 1.0 / ld ** 2) w l lw 2.5 lc rgb '#1f77b4' t 'shallow-water theory (L_d = 990 km)', -beta / ((x * 1e-6) ** 2 + l ** 2) w l lw 2 dt 2 lc rgb '#999999' t 'non-divergent (L_d -> infinity)', 'data/rossby_dispersion.csv' u 1:2 w p pt 7 ps 1.8 lc rgb '#d62728' t 'lmweather, crest drift over 5 days (m = 1..7)'");
 plot.close();
 end _lmcode_
-savedsl(draw, "data/rossby_dispersion-draw.dslb");
-r = system ${dsl_cli(draw)} --lmcode data/rossby_dispersion-draw.dslb;
-assert(r.code == 0, r.stdout + r.stderr);
+r = run_lmcode(draw);
+require(r.ok, "run failed");
 println("wrote images/rossby_dispersion.png");

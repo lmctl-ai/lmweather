@@ -37,9 +37,8 @@ for (i in range(0, 3)) {
 }
 wx.save_text("data/tc1_resolution.csv", table);
 end _lmcode_
-savedsl(sim, "data/williamson1_advection-sim.dslb");
-r = system ${dsl_cli(sim)} --lmcode data/williamson1_advection-sim.dslb;
-assert(r.code == 0, r.stdout + r.stderr);
+r = run_lmcode(sim);
+require(r.ok, "run failed");
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/williamson1_advection.png", 1000, 720);
@@ -61,7 +60,6 @@ plot.cmd("plot 'data/tc1_resolution.csv' u 1:($4/1000.0) w lp lw 2.5 pt 7 ps 1.4
 plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
-savedsl(draw, "data/williamson1_advection-draw.dslb");
-r = system ${dsl_cli(draw)} --lmcode data/williamson1_advection-draw.dslb;
-assert(r.code == 0, r.stdout + r.stderr);
+r = run_lmcode(draw);
+require(r.ok, "run failed");
 println("wrote images/williamson1_advection.png");

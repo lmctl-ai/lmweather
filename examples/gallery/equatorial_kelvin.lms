@@ -34,9 +34,8 @@ wx.print("Kelvin crest on equator: " + str(h_kelvin) + " m; Rossby lobe max at 1
 wx.assert_true(h_kelvin > 3.0);
 wx.assert_true(h_rossby > 1.0);
 end _lmcode_
-savedsl(sim, "data/equatorial_kelvin-sim.dslb");
-r = system ${dsl_cli(sim)} --lmcode data/equatorial_kelvin-sim.dslb;
-assert(r.code == 0);
+r = run_lmcode(sim);
+assert(r.ok);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/equatorial_kelvin.png", 900, 580);
@@ -55,7 +54,6 @@ plot.cmd("plot 0 w l lw 1 lc rgb '#cccccc' notitle, 'data/kelvin_slices.csv' u 1
 plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
-savedsl(draw, "data/equatorial_kelvin-draw.dslb");
-r = system ${dsl_cli(draw)} --lmcode data/equatorial_kelvin-draw.dslb;
-assert(r.code == 0);
+r = run_lmcode(draw);
+assert(r.ok);
 println("wrote images/equatorial_kelvin.png");

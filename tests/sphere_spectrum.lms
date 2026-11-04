@@ -1,7 +1,6 @@
 # Energy spectra by total wavenumber n. Parseval: the kinetic spectrum sums to the area mean of |v|^2/2, so on a layer
 # of uniform depth H it equals kinetic_energy() / H to rounding; a single spherical harmonic puts all its potential energy
 # in one degree; energy = kinetic + potential; decaying turbulence under hyperdiffusion loses kinetic energy at high n.
-out = ARGV.len() > 0 ? ARGV[0] : "build/sphere_spectrum.dslb";
 p = _lmcode_ cli="lmweather";
 let pi = 3.141592653589793;
 let g = 9.80616;
@@ -34,4 +33,6 @@ wx.assert_true(t.energy() < e1);
 wx.assert_true(t.kinetic_energy() > 0.5 * k1);
 wx.assert_close(t.mean_height(), 4000.0, 0.000000001);
 end _lmcode_
-savedsl(p, out);
+r = run_lmcode(p);
+println(json_stringify(r));
+require(r.ok, "sphere_spectrum failed");

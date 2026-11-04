@@ -22,9 +22,8 @@ wx.assert_close(s.mean_height(), m0, 0.000000001);
 wx.assert_close(s.energy() / e0, 1.0, 0.000001);
 wx.assert_true(s.max_wind() > 35.0);
 end _lmcode_
-savedsl(sim, "data/mountain_flow-sim.dslb");
-r = system ${dsl_cli(sim)} --lmcode data/mountain_flow-sim.dslb;
-assert(r.code == 0, r.stdout + r.stderr);
+r = run_lmcode(sim);
+require(r.ok, "run failed");
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/mountain_flow.png", 1000, 720);
@@ -48,7 +47,6 @@ plot.cmd("plot 'data/tc5_conservation.csv' u 1:5 w lp lw 2.5 pt 7 lc rgb '#9467b
 plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
-savedsl(draw, "data/mountain_flow-draw.dslb");
-r = system ${dsl_cli(draw)} --lmcode data/mountain_flow-draw.dslb;
-assert(r.code == 0, r.stdout + r.stderr);
+r = run_lmcode(draw);
+require(r.ok, "run failed");
 println("wrote images/mountain_flow.png");

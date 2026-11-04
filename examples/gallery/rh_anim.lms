@@ -16,9 +16,8 @@ wx.assert_close(s.mean_height(), m0, 0.00000001);
 wx.assert_close(s.energy() / e0, 1.0, 0.0005);
 wx.print("14-day energy ratio: " + str(s.energy() / e0));
 end _lmcode_
-savedsl(sim, "data/rh_anim-sim.dslb");
-r = system ${dsl_cli(sim)} --lmcode data/rh_anim-sim.dslb;
-assert(r.code == 0);
+r = run_lmcode(sim);
+assert(r.ok);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.cmd("set pm3d map; set palette rgbformulae 33,13,10; unset key");
@@ -32,9 +31,8 @@ for (k in range(0, 56)) {
   plot.close();
 }
 end _lmcode_
-savedsl(draw, "data/rh_anim-draw.dslb");
-r = system ${dsl_cli(draw)} --lmcode data/rh_anim-draw.dslb;
-assert(r.code == 0);
+r = run_lmcode(draw);
+assert(r.ok);
 r = system ffmpeg -y -loglevel error -framerate 12 -i data/rh_frames/f%d.png -vf "split[a][b];[a]palettegen=max_colors=96[p];[b][p]paletteuse=dither=none" images/rh_anim.gif;
-assert(r.code == 0);
+assert(r.ok);
 println("wrote images/rh_anim.gif");

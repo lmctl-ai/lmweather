@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 #ifdef _WIN32
@@ -522,37 +523,85 @@ int main(int argc, char **argv) {
     return 2;
   }
   if (argc == 2 && a1 == "--lmcode-signatures") { for (const auto &s : reg.signatures()) std::cout << s << '\n'; return 0; }
+  // --lmcode: one invocation envelope (lmcode-cpp InvocationResults). Exit 0 success,
+  // 2 cli, 3 load/run, 4 application (APP_FAIL) or output failure.
   bool dry = false;
   int dsl_arg = 1;
   if (argc > 1 && a1 == "--dry-run") { dry = true; ++dsl_arg; }
-  if (argc <= dsl_arg || std::string(argv[dsl_arg]) != "--lmcode") { std::cerr << usage; return 2; }
+  if (argc <= dsl_arg || std::string(argv[dsl_arg]) != "--lmcode") {
+    std::cerr << usage;
+    return dslvm::failure_frame("cli", dslvm::Error("CLI_USAGE", "expected [--dry-run] --lmcode FILE [FILE ...]"));
+  }
   std::vector<std::string> files;
   for (int i = dsl_arg + 1; i < argc; i++) {
     if (std::string(argv[i]) == "--dry-run") {
-      if (dry) { std::cerr << usage; return 2; }
+      if (dry) {
+        std::cerr << usage;
+        return dslvm::failure_frame("cli", dslvm::Error("CLI_USAGE", "duplicate --dry-run"));
+      }
       dry = true;
     } else if (std::string(argv[i]).empty() || std::string(argv[i]).rfind("--", 0) == 0) {
       std::cerr << usage;
-      return 2;
+      return dslvm::failure_frame("cli", dslvm::Error("CLI_USAGE", "invalid program file argument"));
     } else files.push_back(argv[i]);
   }
-  if (files.empty()) { std::cerr << usage; return 2; }
-  if (!membudget::configure("lmweather", "LMWEATHER_MAX_MEMORY_MB")) { std::cerr << usage; return 2; }
+  if (files.empty()) {
+    std::cerr << usage;
+    return dslvm::failure_frame("cli", dslvm::Error("CLI_USAGE", "expected at least one program file"));
+  }
+  if (!membudget::configure("lmweather", "LMWEATHER_MAX_MEMORY_MB")) {
+    std::cerr << usage;
+    return dslvm::failure_frame("cli", dslvm::Error("CLI_USAGE", "invalid LMWEATHER_MAX_MEMORY_MB"));
+  }
+  // Dry mode is invocation-wide: run_lmcode supplies it in LMCODE_INVOCATION_FILE metadata; the
+  // standalone --dry-run flag requests the same mode when no metadata is present.
+  std::optional<dslvm::InvocationResults> holder;
+  try {
+    if (dry && !std::getenv("LMCODE_INVOCATION_FILE")) holder.emplace(dslvm::InvocationResults::from_command(files, true));
+    else holder.emplace(dslvm::InvocationResults::from_command(files));
+  } catch (const dslvm::Error &e) {
+    std::cerr << usage;
+    return dslvm::failure_frame("cli", e);
+  }
+  auto &results = *holder;
+  if (dry && !results.dry()) {
+    return dslvm::failure_frame("cli", dslvm::Error("CLI_USAGE", "--dry-run contradicts real-mode invocation metadata"));
+  }
   const std::string schema(reinterpret_cast<const char *>(lmweather::embedded_schema), lmweather::embedded_schema_size);
   dslvm::Context ctx;
   Wx wx;
   ctx.set("wx", &wx);
-  std::vector<dslvm::Program> programs;
-  for (const auto &file : files)
-    try { programs.push_back(dslvm::Program::load(dslvm::read_file(file), schema, reg)); }
-    catch (const dslvm::Error &e) { return dslvm::report_error("load", e); }
-    catch (const std::exception &e) { return dslvm::report_error("load", dslvm::Error(e.what())); }
-  if (dry) { dslvm::report_ok(); return 0; }
-  for (const auto &p : programs) {
-    try { p.run(ctx, reg); }
-    catch (const dslvm::Error &e) { return dslvm::report_error("run", e); }
-    catch (const std::exception &e) { return dslvm::report_error("run", dslvm::Error(e.what())); }  // budget in the VM
-    dslvm::report_ok();
+  // A program that exhausted the memory budget still needs a failure frame, and the simulation it
+  // built stays allocated: this reserve is released first, so recording the failure cannot throw.
+  auto reserve = std::make_unique<char[]>(1 << 20);
+  dslvm::ResultContract contract;
+  // Load and verify every file first: a bad later file must not leave earlier output behind.
+  std::vector<std::pair<size_t, dslvm::Program>> programs;
+  try { contract = dslvm::ResultContract::from_schema(schema); }
+  catch (const dslvm::Error &e) { reserve.reset(); results.fail(std::nullopt, "load", e); return results.write_frame(std::cout); }
+  for (const auto &part : results.registrations()) {
+    try { programs.emplace_back(part.index, dslvm::Program::load(dslvm::read_file(part.file), schema, reg)); }
+    catch (const dslvm::Error &e) { reserve.reset(); results.fail(part.index, "load", e); return results.write_frame(std::cout); }
+    catch (const std::exception &e) { reserve.reset(); results.fail(part.index, "load", dslvm::Error(e.what())); return results.write_frame(std::cout); }
   }
-  return 0;
+  for (auto &[index, program] : programs) {
+    try {
+      results.select(index, reg, contract);
+      // A dry invocation validates and loads every program but runs none: programs write CSV and
+      // other files, and a simulation has no effect-free mode.
+      if (!results.dry()) program.run(ctx, reg);
+      results.complete(index);
+    } catch (const dslvm::Error &e) {
+      reserve.reset();
+      std::cerr << e.what() << "\n";
+      results.fail(index, e.code == "APP_FAIL" ? "app" : "run", e);
+      break;
+    } catch (const std::exception &e) {  // the memory budget inside the VM
+      reserve.reset();
+      std::cerr << e.what() << "\n";
+      results.fail(index, "run", dslvm::Error(e.what()));
+      break;
+    }
+  }
+  return results.write_frame(std::cout);
 }

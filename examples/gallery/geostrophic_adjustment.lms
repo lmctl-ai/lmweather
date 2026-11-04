@@ -59,9 +59,8 @@ wx.print("center height: simulated " + str(avg_center) + " m, PV prediction " + 
 wx.assert_close(avg_center, pred_center, 0.01);
 wx.assert_close(m.pv_anomaly_rms() / q0, 1.0, 0.001);
 end _lmcode_
-savedsl(sim, "data/geostrophic_adjustment-sim.dslb");
-r = system ${dsl_cli(sim)} --lmcode data/geostrophic_adjustment-sim.dslb;
-assert(r.code == 0);
+r = run_lmcode(sim);
+assert(r.ok);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/geostrophic_adjustment.png", 920, 480);
@@ -76,7 +75,6 @@ plot.cmd("plot 0 w l lw 1 lc rgb '#999999' notitle, 'data/adjust_profiles.csv' u
 plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
-savedsl(draw, "data/geostrophic_adjustment-draw.dslb");
-r = system ${dsl_cli(draw)} --lmcode data/geostrophic_adjustment-draw.dslb;
-assert(r.code == 0);
+r = run_lmcode(draw);
+assert(r.ok);
 println("wrote images/geostrophic_adjustment.png");

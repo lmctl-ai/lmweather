@@ -37,8 +37,8 @@ from an empty directory, for example `lmctl https://raw.githubusercontent.com/lm
 writes `images/rossby_dispersion.png` in about 30 s. The `install=` binding downloads the released `lmweather` and `lmplot`
 on first use (Linux binaries require dynamic glibc >= 2.35, Ubuntu 22.04+); binaries already on `PATH` take priority. From a checkout, `examples/render-all.sh` regenerates `docs/images/`.
 
-It is a scripting host, not a command-line tool: write an [lmscript](https://lmctl.com/tools/lmscript/skill.html) `_dsl_` block,
-compile it, run it with `lmweather --lmcode`. No Fortran, no NetCDF, no MPI, no data files, no shared libraries. (It is not WRF; see *Scope*.)
+It is a scripting host, not a command-line tool: write an [lmscript](https://lmctl.com/tools/lmscript/skill.html) `_lmcode_` block
+and run it; `lmscript` compiles the block and hands the program to `lmweather --lmcode` itself. No Fortran, no NetCDF, no MPI, no data files, no shared libraries. (It is not WRF; see *Scope*.)
 
 ```
 # rh.lms: the Rossby-Haurwitz wave (Williamson test case 6) drifts east; mass and energy are conserved
@@ -52,8 +52,8 @@ wx.assert_close(s.mean_height(), m0, 0.000000001);
 wx.assert_close(s.energy() / e0, 1.0, 0.0001);
 s.save_csv("rh_day7.csv");                           # lon lat h u v zeta, ready for gnuplot pm3d
 end _lmcode_
-savedsl(p, "rh.dslb");
-system ${dsl_cli(p)} --lmcode rh.dslb;
+r = run_lmcode(p);
+require(r.ok, "rh run failed");
 ```
 
 `lmscript rh.lms` finds `lmweather` on `PATH` or downloads the release binary for your platform on first use,
@@ -83,7 +83,7 @@ schema conventions: [durable-memory/04-schema-v0.md](durable-memory/04-schema-v0
 
 Combine it with other hosts in one script: [examples/gallery/spherical_modes.lms](examples/gallery/spherical_modes.lms) integrates
 four spherical-harmonic gravity modes with lmweather and plots them against the analytical Laplace tidal frequencies with
-[lmplot](https://github.com/lmctl-ai/lmplot) (two `_dsl_` blocks, two hosts).
+[lmplot](https://github.com/lmctl-ai/lmplot) (two `_lmcode_` blocks, two hosts).
 
 <p align="center">
   <img src="docs/images/spherical_modes.png" width="680" alt="spherical_modes"><br>

@@ -14,4 +14,4 @@ Measured 2026-10-23, x86_64 Linux (WSL2), 4 cores, GCC, Ninja.
 
 ## Native host flag contract
 
-The host accepts only the lmcode option family, with no retired aliases. The full gate checks exact schema/signature output, new loader routing and rejection before file effects in scratch HOME. SDK20325f7 is synchronized through the owner script for actual source-compiler v6 capabilities; package metadata alone is insufficient. Internal DSLB and .dslb names remain.
+The host accepts only the lmcode option family, with no retired aliases. The full gate checks exact schema/signature output, new loader routing and rejection before file effects in scratch HOME. The SDK is synchronized through the owner script at the pin in sdk.lock (current lmcode-cpp origin/main); the host answer is the one-envelope InvocationResults frame (exit 0 ok, 2 cli, 3 load/run, 4 application); see durable-memory/11-invocation-envelope.md. Internal DSLB naming remains (DSLB v6 headers are checked on the program files the host receives) but no .dslb files are produced by the repo anymore.

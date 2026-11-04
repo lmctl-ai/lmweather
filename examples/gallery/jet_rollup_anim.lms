@@ -18,9 +18,8 @@ for (k in range(0, 42)) {
 wx.assert_close(m.mean_depth(), d0, 0.000001);
 wx.print("day 3.5: max speed " + str(m.max_speed()) + " m/s");
 end _lmcode_
-savedsl(sim, "data/jet_rollup_anim-sim.dslb");
-r = system ${dsl_cli(sim)} --lmcode data/jet_rollup_anim-sim.dslb;
-assert(r.code == 0, r.stdout + r.stderr);
+r = run_lmcode(sim);
+require(r.ok, "run failed");
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.cmd("set border 3; set tics nomirror; unset key");
@@ -34,9 +33,8 @@ for (k in range(0, 42)) {
   plot.close();
 }
 end _lmcode_
-savedsl(draw, "data/jet_rollup_anim-draw.dslb");
-r = system ${dsl_cli(draw)} --lmcode data/jet_rollup_anim-draw.dslb;
-assert(r.code == 0, r.stdout + r.stderr);
+r = run_lmcode(draw);
+require(r.ok, "run failed");
 r = system ffmpeg -y -loglevel error -framerate 8 -i data/jet_frames/f%d.png -vf "split[a][b];[a]palettegen=max_colors=96[p];[b][p]paletteuse=dither=none" images/jet_rollup_anim.gif;
-assert(r.code == 0, r.stderr);
+require(r.ok, "run failed");
 println("wrote images/jet_rollup_anim.gif");
