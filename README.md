@@ -6,6 +6,13 @@
 [![Latest release](https://img.shields.io/github/v/release/lmctl-ai/lmweather?label=release)](https://github.com/lmctl-ai/lmweather/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+## Documentation
+
+- [Quick reference](https://www.lmctl.com/tools/lmweather/)
+- [LLM skill](https://www.lmctl.com/tools/lmweather/skill.html)
+- [Guide](https://www.lmctl.com/tools/lmweather/guide.html)
+- [Reference](https://www.lmctl.com/tools/lmweather/reference.html)
+
 Twenty worked problems with known answers, each made by one runnable file. Every command below runs from any empty
 directory: lmweather integrates, [lmplot](https://github.com/lmctl-ai/lmplot) draws, the picture lands in `images/`.
 
